@@ -43,7 +43,7 @@ if __name__ == '__main__':
     print('test shape', test_data.shape)
     
 #    clf = LogisticRegression(C=1, fit_intercept=True, max_iter=10000,class_weight={0:0.5, 1:0.5})
-    clf = LogisticRegression(C=0.3, fit_intercept=True, max_iter=3000,class_weight={0:0.5, 1:0.5})
+    clf = LogisticRegression(C=1.2, fit_intercept=True, max_iter=3000,class_weight={0:0.5, 1:0.5})
     clf.fit(X=train_data.values, y=np.squeeze(train_Y))
     
     predict_train = clf.predict_proba(train_data.values)[:,1]
