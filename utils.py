@@ -21,9 +21,12 @@ result_path = '../result/'
 model_path = '../model/'
 
 def load_pickle(path):
-    return pickle.load(open(path,'rb'))
+    with open(path,'rb') as f_t:
+        return pickle.load(f_t)
 def dump_pickle(obj, path, protocol=None,):
-    pickle.dump(obj,open(path,'wb'),protocol=protocol)
+    with open(path,'wb') as f_t:
+        return pickle.dump(obj,f_t,protocol=protocol)
+#    pickle.dump(obj,open(path,'wb'),protocol=protocol)
     
     
 def addCate(data):

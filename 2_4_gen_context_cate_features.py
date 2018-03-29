@@ -11,6 +11,7 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import os
+from smooth import BayesianSmoothing
 
 # In[]
 def get_context_cate_cols(cate_dict, cate_cnt):
@@ -147,18 +148,33 @@ def gen_cate_property_cvr(test_day, data):
     if os.path.exists(cate_prop_dict_path):
         print('found '+cate_prop_dict_path)   
         return load_pickle(cate_prop_dict_path)
-#    real_data = addTime(data)
-    real_data = data
-    real_data = real_data[real_data['day']<test_day]
-    trade_data = real_data[real_data['is_trade']==1]
-    all_cate_prop_cnt = gen_sorted_cate_property(real_data)
-    trade_cate_prop_cnt = gen_sorted_cate_property(trade_data)
-    cate_prop_cvr = trade_cate_prop_cnt
-    all_cate_prop_cnt = dict(all_cate_prop_cnt)
-    for i, cate_prop in enumerate(cate_prop_cvr):
-        #cate_prop_cvr[i]=list(cate_prop_cvr[i])+[all_cate_prop_cnt[cate_prop[0]], 1.0*cate_prop[1]/(all_cate_prop_cnt[cate_prop[0]]+1)]
-        cate_prop_cvr[i] = [cate_prop_cvr[i][0], 1.0*cate_prop[1]/(all_cate_prop_cnt[cate_prop[0]]+1)]
-    dump_pickle(cate_prop_cvr, cate_prop_dict_path)
+    cate_prop_cvr = []
+    if test_day != 17:
+        real_data = data
+        real_data = real_data[real_data['day']<test_day]
+        trade_data = real_data[real_data['is_trade']==1]
+        all_cate_prop_cnt = gen_sorted_cate_property(real_data)
+        trade_cate_prop_cnt = gen_sorted_cate_property(trade_data)
+        cate_prop_cvr = trade_cate_prop_cnt
+        
+        all_cate_df = pd.DataFrame(all_cate_prop_cnt,columns=['cate_prop','I'])
+        trade_cate_df = pd.DataFrame(trade_cate_prop_cnt,columns=['cate_prop','C'])
+        all_cate_df = all_cate_df.merge(trade_cate_df, on='cate_prop', how='outer')
+        all_cate_df.fillna(0,inplace=True)
+        
+        #平滑滤波
+        hyper = BayesianSmoothing(1, 1)
+        hyper.update(all_cate_df['I'].values, all_cate_df['C'].values, 100, 0.00001)
+        alpha = hyper.alpha
+        beta = hyper.beta
+        all_cate_df['cate_prop_cvr_smooth'] = (all_cate_df['C'] + alpha) / (all_cate_df['I'] + alpha + beta)
+        
+        cate_prop_cvr = all_cate_df[['cate_prop','cate_prop_cvr_smooth']].values
+#    all_cate_prop_cnt = dict(all_cate_prop_cnt)
+#    for i, cate_prop in enumerate(cate_prop_cvr):
+#        #cate_prop_cvr[i]=list(cate_prop_cvr[i])+[all_cate_prop_cnt[cate_prop[0]], 1.0*cate_prop[1]/(all_cate_prop_cnt[cate_prop[0]]+1)]
+#        cate_prop_cvr[i] = [cate_prop_cvr[i][0], 1.0*cate_prop[1]/(all_cate_prop_cnt[cate_prop[0]]+1)]
+#    dump_pickle(cate_prop_cvr, cate_prop_dict_path)
     return cate_prop_cvr
 
 def gen_cate_property_cvr_stats(x, cate_prop_cvr):

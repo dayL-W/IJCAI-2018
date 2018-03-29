@@ -34,17 +34,26 @@ if __name__ == '__main__':
     t0 = time.time()
     train_data = load_pickle(path=cache_pkl_path +'train_data')
     train_Y = load_pickle(path=cache_pkl_path +'train_Y')
+    new_cvr = load_pickle(path=cache_pkl_path +'train_data_cvr_fusion')
+    train_data['new_cvr'] = new_cvr.values
+    
     cv_data = load_pickle(path=cache_pkl_path +'cv_data')
     cv_Y = load_pickle(path=cache_pkl_path +'cv_Y')
+    new_cvr = load_pickle(path=cache_pkl_path +'cv_data_cvr_fusion')
+    cv_data['new_cvr'] = new_cvr.values
     
     test_data = load_pickle(path=cache_pkl_path +'test_data')
+    new_cvr = load_pickle(path=cache_pkl_path +'test_data_cvr_fusion')
+    test_data['new_cvr'] = new_cvr.values
+    
     test_file = 'round1_ijcai_18_test_a_20180301.txt'
     test = pd.read_table(raw_data_path + test_file,delim_whitespace=True)
     test_id = test.instance_id
     
-    train_data.drop(['user_id','shop_id','item_id','item_brand_id'],axis=1,inplace=True)
-    cv_data.drop(['user_id','shop_id','item_id','item_brand_id'],axis=1,inplace=True)
-    test_data.drop(['user_id','shop_id','item_id','item_brand_id'],axis=1,inplace=True)
+    drop_cols = ['user_id','shop_id','item_id','item_brand_id']
+    train_data.drop(drop_cols,axis=1,inplace=True)
+    cv_data.drop(drop_cols,axis=1,inplace=True)
+    test_data.drop(drop_cols,axis=1,inplace=True)
     
     print('train shap:',train_data.shape)
     print('cv shape', cv_data.shape)
@@ -56,7 +65,7 @@ if __name__ == '__main__':
                     train_set=lgb_train,      #要训练的数据
                     num_boost_round=6000,     #迭代次数
                     valid_sets=lgb_cv,        #训练时需要评估的列表
-                    verbose_eval=True,       #
+                    verbose_eval=False,       #
                     
                     early_stopping_rounds=200)
     

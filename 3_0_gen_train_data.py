@@ -39,7 +39,13 @@ def gen_train_data(file_name='train', test_day=24):
     data = pd.concat([user_basic_info,user_search_count,user_search_time,\
                       item_basic_info,item_relative_info,query_item_sim,shop_basic_info,\
                       buy_count,cvr_smooth,cate_prop_cvr],axis=1)
+    #以下特征在训练集和测试集上缺失值特别高，先删去看看
+#    cols = ['user_id_cvr_smooth','item_id_cvr_smooth','item_brand_id_cvr_smooth','shop_id_cvr_smooth',\
+#            'user_id_buy_count']
+#    data.drop(cols, inplace=True,axis=1)
     
+#    17号都是缺失值，可以考虑删除
+    data.drop(data.index[data.day==17],inplace=True, axis=0)
     #把销量、价格、收藏次数以下特征取对数
     data['item_sales_level'].replace(to_replace=-1,value=0,inplace=True)
     cols = ['item_sales_level','item_collected_level','item_pv_level']
@@ -48,8 +54,8 @@ def gen_train_data(file_name='train', test_day=24):
         
     if file_name == 'train':
         #划分训练数据和测试数据
-        train_data = data.loc[data.day<test_day,:]
-        cv_data = data.loc[data.day>=test_day,:]
+        train_data = data.loc[data.day<test_day,:].copy()
+        cv_data = data.loc[data.day>=test_day,:].copy()
         
         #对训练数据的负样本进行1/7的采样
 #        train_data = build_train_dataset(train_data)
