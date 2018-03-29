@@ -86,11 +86,19 @@ def gen_one_hot_data():
     
     data = pd.concat([train_data,cv_data, test_data],axis=0)
     
-#    cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level'\
-#            ,'second_cate','item_city_id','item_price_level','item_sales_level'\
-#            ,'item_collected_level','item_pv_level','context_page_id','shop_review_num_level'\
-#            ,'shop_star_level']
+    #对非线性的cvr进行分段处理
+    cols_divide = {'user_id_cvr_smooth':0.05,'item_id_cvr_smooth':0.075,\
+                   'item_brand_id_cvr_smooth':0.075,'second_cate_cvr_smooth':0.045,\
+                   'shop_id_cvr_smooth':0.075,'max_cp_cvr':0.1,'min_cp_cvr':0.04,'mean_cp_cvr':0.05}
     
+#    for key, value in cols_divide.items():
+#        str_col = key+'_-1'
+#        data[str_col] = data[key] == -1
+#        str_col = key+'_sma'+str(value)
+#        data[str_col] = (data[key] != -1) & (data[key]<=value)
+#        str_col = key+'_gra'+str(value)
+#        data[str_col] = (data[key] != -1) & (data[key]>value)
+#        data.drop(key, axis=1, inplace=True)
     cols = ['user_gender_id','user_age_level','user_occupation_id'
             ,'second_cate','item_city_id','item_price_level'
             ,'context_page_id','shop_review_num_level']
@@ -99,11 +107,7 @@ def gen_one_hot_data():
         col_feature = pd.get_dummies(data[col], prefix=col)
         data.drop([col],axis=1,inplace=True)
         data = pd.concat([data,col_feature], axis=1)
-                                       
-#    data.drop(['item_cvr_smooth','user_cvr_smooth','shop_cvr_smooth','brand_cvr_smooth',\
-#              'cate_cvr_smooth','user_buy_count','item_buy_count','brand_buy_count','cate_buy_count',\
-#               'shop_buy_count','user_I','item_I','brand_I','cate_I','shop_I'],axis=1,inplace=True)
-
+    
     X = minmax_scale(data.values)
     data = pd.DataFrame(data=X, columns=data.columns)
     
