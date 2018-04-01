@@ -40,12 +40,11 @@ def gen_train_data(file_name='train', test_day=24):
                       item_basic_info,item_relative_info,query_item_sim,shop_basic_info,\
                       buy_count,cvr_smooth,cate_prop_cvr],axis=1)
     #以下特征在训练集和测试集上缺失值特别高，先删去看看
-#    cols = ['user_id_cvr_smooth','item_id_cvr_smooth','item_brand_id_cvr_smooth','shop_id_cvr_smooth',\
-#            'user_id_buy_count']
+#    cols = ['user_id_cvr_smooth','user_id_buy_count']
 #    data.drop(cols, inplace=True,axis=1)
     
 #    17号都是缺失值，可以考虑删除
-    data.drop(data.index[data.day==17],inplace=True, axis=0)
+#    data.drop(data.index[data.day==17],inplace=True, axis=0)
     #把销量、价格、收藏次数以下特征取对数
     data['item_sales_level'].replace(to_replace=-1,value=0,inplace=True)
     cols = ['item_sales_level','item_collected_level','item_pv_level']
@@ -91,14 +90,14 @@ def gen_one_hot_data():
                    'item_brand_id_cvr_smooth':0.075,'second_cate_cvr_smooth':0.045,\
                    'shop_id_cvr_smooth':0.075,'max_cp_cvr':0.1,'min_cp_cvr':0.04,'mean_cp_cvr':0.05}
     
-#    for key, value in cols_divide.items():
-#        str_col = key+'_-1'
-#        data[str_col] = data[key] == -1
-#        str_col = key+'_sma'+str(value)
-#        data[str_col] = (data[key] != -1) & (data[key]<=value)
-#        str_col = key+'_gra'+str(value)
-#        data[str_col] = (data[key] != -1) & (data[key]>value)
-#        data.drop(key, axis=1, inplace=True)
+    for key, value in cols_divide.items():
+        str_col = key+'_-1'
+        data[str_col] = data[key] == -1
+        str_col = key+'_sma'+str(value)
+        data[str_col] = (data[key] != -1) & (data[key]<=value)
+        str_col = key+'_gra'+str(value)
+        data[str_col] = (data[key] != -1) & (data[key]>value)
+        data.drop(key, axis=1, inplace=True)
     cols = ['user_gender_id','user_age_level','user_occupation_id'
             ,'second_cate','item_city_id','item_price_level'
             ,'context_page_id','shop_review_num_level']

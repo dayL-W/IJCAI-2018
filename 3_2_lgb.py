@@ -18,10 +18,10 @@ from sklearn.linear_model import LogisticRegression
 import lightgbm as lgb
 
 params = {
-    'max_depth': 4,                 #3
-#    'min_data_in_leaf': 2,
-    'feature_fraction': 1,       #0.45
-    'learning_rate': 0.04,          #0.16
+    'max_depth': 4,                 #4
+#    'min_data_in_leaf': 40,-
+    'feature_fraction': 1,       #1
+    'learning_rate': 0.04,          #0.04
     'boosting_type': 'gbdt',
     'objective': 'binary',
 #    'verbose': -1,
@@ -67,7 +67,7 @@ if __name__ == '__main__':
                     valid_sets=lgb_cv,        #训练时需要评估的列表
                     verbose_eval=False,       #
                     
-                    early_stopping_rounds=200)
+                    early_stopping_rounds=500)
     
     predict_train = gbm.predict(train_data.values)
     predict_cv = gbm.predict(cv_data.values)
