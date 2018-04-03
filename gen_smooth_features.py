@@ -220,13 +220,13 @@ def gen_cvr_smooth(file_name='train'):
             alpha = hyper.alpha
             beta = hyper.beta
             col_cvr[col_cvr_smooth] = (col_cvr[col_C] + alpha) / (col_cvr[col_I] + alpha + beta)
-#            col_cvr_dict = dict(col_cvr[[col, col_cvr_smooth]].values)
-            col_cvr_series = col_cvr[[col, col_cvr_smooth]].set_index(col)[col_cvr_smooth]
+            col_cvr_dict = dict(col_cvr[[col, col_cvr_smooth]].values)
+#            col_cvr_series = col_cvr[[col, col_cvr_smooth]].set_index(col)[col_cvr_smooth]
                 
                 #把今天之前的转化率加到今天的特征中
             col_feat = data.loc[:, ['instance_id', col]]
-#            col_feat[col_cvr_smooth] = col_feat.apply(lambda x: col_cvr_dict[x[col]] if x[col] in col_cvr_dict.keys() else -1, axis=1)
-            col_feat[col_cvr_smooth] = col_feat.apply(lambda x: col_cvr_series[x[col]] if x[col] in col_cvr_series.index else -1, axis=1)
+            col_feat[col_cvr_smooth] = col_feat.apply(lambda x: col_cvr_dict[x[col]] if x[col] in col_cvr_dict.keys() else -1, axis=1)
+#            col_feat[col_cvr_smooth] = col_feat.apply(lambda x: col_cvr_series[x[col]] if x[col] in col_cvr_series.index else -1, axis=1)
             feat_all = pd.concat([feat_all,col_feat[col_cvr_smooth]], axis=1)
         #保存数据
         cvr_path = feature_data_path + 'test_cvr_smooth'
@@ -234,6 +234,6 @@ def gen_cvr_smooth(file_name='train'):
 # In[]
 if __name__ == '__main__':
     gen_cvr_smooth('train')
-#    gen_cvr_smooth('test')
+    gen_cvr_smooth('test')
 
 

@@ -32,10 +32,10 @@ def gen_user_basic_info(file_name='train',test_day=24):
     data_select['user_star_level'] = data['user_star_level']
     
     #用户搜索时间划分，上午/下午/晚上/凌晨
-    data_select['is_morning'] = (data['hour'].values>7) & (data['hour'].values<=12)
-    data_select['is_afternoon'] = (data['hour'].values>12) & (data['hour'].values<=17)
-    data_select['is_evening'] = (data['hour'].values>17) & (data['hour'].values<=23)
-    data_select['is_before_dawn'] = (data['hour'].values>23) | (data['hour'].values<=7)
+    data_select['is_morning'] = (data['hour'].values<=10)
+#    data_select['is_afternoon'] = (data['hour'].values>12) & (data['hour'].values<=17)
+    data_select['is_evening'] = (data['hour'].values>=11) & (data['hour'].values<=15)
+    data_select['is_before_dawn'] = (data['hour'].values>=16) & (data['hour'].values<=23)
         
 #    if file_name == 'train':
 #        '''

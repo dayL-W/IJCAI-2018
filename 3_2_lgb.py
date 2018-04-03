@@ -67,7 +67,7 @@ if __name__ == '__main__':
                     valid_sets=lgb_cv,        #训练时需要评估的列表
                     verbose_eval=False,       #
                     
-                    early_stopping_rounds=500)
+                    early_stopping_rounds=200)
     
     predict_train = gbm.predict(train_data.values)
     predict_cv = gbm.predict(cv_data.values)
