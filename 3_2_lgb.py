@@ -54,7 +54,7 @@ if __name__ == '__main__':
     train_data.drop(drop_cols,axis=1,inplace=True)
     cv_data.drop(drop_cols,axis=1,inplace=True)
     test_data.drop(drop_cols,axis=1,inplace=True)
-    
+#    
     print('train shap:',train_data.shape)
     print('cv shape', cv_data.shape)
     print('test shape', test_data.shape)

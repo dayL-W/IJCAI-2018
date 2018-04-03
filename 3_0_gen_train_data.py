@@ -40,8 +40,8 @@ def gen_train_data(file_name='train', test_day=24):
                       item_basic_info,item_relative_info,query_item_sim,shop_basic_info,\
                       buy_count,cvr_smooth,cate_prop_cvr],axis=1)
     #以下特征在训练集和测试集上缺失值特别高，先删去看看
-    cols = ['user_id_cvr_smooth','user_id_buy_count']
-    data.drop(cols, inplace=True,axis=1)
+#    cols = ['user_id_cvr_smooth','user_id_buy_count']
+#    data.drop(cols, inplace=True,axis=1)
     
 #    17号都是缺失值，可以考虑删除
 #    data.drop(data.index[data.day==17],inplace=True, axis=0)
@@ -128,4 +128,4 @@ if __name__ == '__main__':
     
     gen_train_data('train')
     gen_train_data('test')
-#    gen_one_hot_data()
+    gen_one_hot_data()
