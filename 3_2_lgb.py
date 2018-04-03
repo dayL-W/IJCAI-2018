@@ -34,18 +34,11 @@ if __name__ == '__main__':
     t0 = time.time()
     train_data = load_pickle(path=cache_pkl_path +'train_data')
     train_Y = load_pickle(path=cache_pkl_path +'train_Y')
-#    new_cvr = load_pickle(path=cache_pkl_path +'train_data_cvr_fusion')
-#    train_data['new_cvr'] = new_cvr.values
     
     cv_data = load_pickle(path=cache_pkl_path +'cv_data')
     cv_Y = load_pickle(path=cache_pkl_path +'cv_Y')
-#    new_cvr = load_pickle(path=cache_pkl_path +'cv_data_cvr_fusion')
-#    cv_data['new_cvr'] = new_cvr.values
     
     test_data = load_pickle(path=cache_pkl_path +'test_data')
-#    new_cvr = load_pickle(path=cache_pkl_path +'test_data_cvr_fusion')
-#    test_data['new_cvr'] = new_cvr.values
-    
     test_file = 'round1_ijcai_18_test_a_20180301.txt'
     test = pd.read_table(raw_data_path + test_file,delim_whitespace=True)
     test_id = test.instance_id

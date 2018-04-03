@@ -16,6 +16,7 @@ from smooth import BayesianSmoothing
 import gen_smooth_features as smooth_features
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import minmax_scale
+from autoencoder import autoencoder,autoencoder_add_classify
 
  # In[]:读取特征并整合成训练数据和测试数据
 def gen_train_data(file_name='train', test_day=24):
@@ -123,9 +124,48 @@ def gen_one_hot_data():
     dump_pickle(cv_data, cache_pkl_path +'cv_data_onehot')
     dump_pickle(test_data, cache_pkl_path +'test_data_onehot')
     
+# In[]:把多个cvr_smooth拟合成一个
+def gen_cvr_fusion():
+    train_data_onehot = load_pickle(path=cache_pkl_path +'train_data_onehot')
+    cv_data_onehot = load_pickle(path=cache_pkl_path +'cv_data_onehot')
+    test_data_onehot = load_pickle(path=cache_pkl_path +'test_data_onehot')
     
+    train_data = load_pickle(path=cache_pkl_path +'train_data')
+    cv_data = load_pickle(path=cache_pkl_path +'cv_data')
+    test_data = load_pickle(path=cache_pkl_path +'test_data')
+    
+    all_data = pd.concat([train_data,cv_data,test_data])
+    cvr_cols = ['user_id_cvr_smooth',
+                 'item_id_cvr_smooth',
+                 'item_brand_id_cvr_smooth',
+                 'second_cate_cvr_smooth',
+                 'shop_id_cvr_smooth',]
+    cvr_data = all_data[cvr_cols]
+    cvr_data_min_max = (cvr_data-cvr_data.min()) /(cvr_data.max()-cvr_data.min())
+    
+    #%% 
+    a = autoencoder(input_size = len(cvr_cols),hidden_layers=[16,8,4,1])
+    #a.load_model()
+    a.train(cvr_data_min_max,5000)
+    new_cvr = a.get_feature(cvr_data_min_max)
+    new_cvr = new_cvr.reshape(-1)
+    train_data['cvr_fusion'] = new_cvr[:len(train_data)]
+    cv_data['cvr_fusion'] = new_cvr[len(train_data):len(train_data)+len(cv_data)]
+    test_data['cvr_fusion'] = new_cvr[len(train_data)+len(cv_data):len(train_data)+len(cv_data)+len(test_data)]
+    train_data_onehot['cvr_fusion'] = train_data.cvr_fusion
+    test_data_onehot['cvr_fusion'] = test_data.cvr_fusion
+    cv_data_onehot['cvr_fusion'] = cv_data.cvr_fusion
+    
+    dump_pickle(train_data, cache_pkl_path +'train_data')
+    dump_pickle(cv_data, cache_pkl_path +'cv_data')
+    dump_pickle(test_data, cache_pkl_path +'test_data')
+    
+    dump_pickle(train_data_onehot, cache_pkl_path +'train_data_onehot')
+    dump_pickle(cv_data_onehot, cache_pkl_path +'cv_data_onehot')
+    dump_pickle(test_data_onehot, cache_pkl_path +'test_data_onehot')
 if __name__ == '__main__':
     
     gen_train_data('train')
     gen_train_data('test')
     gen_one_hot_data()
+    gen_cvr_fusion()
