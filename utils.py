@@ -12,7 +12,8 @@ import scipy.stats as sps
 from tqdm import tqdm
 import math
 import random
-
+import time
+import datetime
 #file_path
 raw_data_path = '../data/'
 feature_data_path ='../features/'
@@ -141,3 +142,13 @@ def cal_single_log_loss(predict_list, valid_list):
             predict_label = 0.99999999999
         loss.extend([-1 *(valid_label*math.log(predict_label) + (1-valid_label)*math.log(1-predict_label))])
     return loss
+
+# In[]:
+def submmit_result(test_y, name):
+    test_file = 'round1_ijcai_18_test_a_20180301.txt'
+    test = pd.read_table(raw_data_path + test_file,delim_whitespace=True)
+    test_id = test.instance_id
+    
+    submission = pd.DataFrame({'instance_id':test_id,'predicted_score':test_y})
+    submission.to_csv(r'../result/{0}_{1}.txt'.format(name,datetime.datetime.now().strftime('%Y%m%d_%H%M%S')),
+                  index=False, sep=' ',line_terminator='\r')

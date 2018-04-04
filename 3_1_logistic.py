@@ -33,7 +33,7 @@ if __name__ == '__main__':
     test = pd.read_table(raw_data_path + test_file,delim_whitespace=True)
     test_id = test.instance_id
     
-    drop_cols = ['user_id','shop_id','item_id','item_brand_id']
+    drop_cols = ['user_id','shop_id','item_id','item_brand_id','item_city_id']
     train_data.drop(drop_cols,axis=1,inplace=True)
     cv_data.drop(drop_cols,axis=1,inplace=True)
     test_data.drop(drop_cols,axis=1,inplace=True)
@@ -55,14 +55,14 @@ if __name__ == '__main__':
     print('测试损失:',cal_log_loss(predict_cv, cv_Y))
     
     #全量数据训练
-    train_data = pd.concat([train_data,cv_data],axis=0)
-    train_Y = np.append(train_Y, cv_Y)
-    clf.fit(X=train_data.values, y=train_Y)
-    
-    predict_test = clf.predict_proba(test_data.values)[:,1]
-    submission = pd.DataFrame({'instance_id':test_id,'predicted_score':predict_test})
-    print('预测正样本比例:',len(submission.loc[submission.predicted_score>=0.5])/len(submission))
-    submission.to_csv(r'../result/LR_{}.txt'.format(datetime.datetime.now().strftime('%Y%m%d_%H%M%S')),
-                  index=False, sep=' ',line_terminator='\r')
+#    train_data = pd.concat([train_data,cv_data],axis=0)
+#    train_Y = np.append(train_Y, cv_Y)
+#    clf.fit(X=train_data.values, y=train_Y)
+#    
+#    predict_test = clf.predict_proba(test_data.values)[:,1]
+#    submission = pd.DataFrame({'instance_id':test_id,'predicted_score':predict_test})
+#    print('预测正样本比例:',len(submission.loc[submission.predicted_score>=0.5])/len(submission))
+#    submission.to_csv(r'../result/LR_{}.txt'.format(datetime.datetime.now().strftime('%Y%m%d_%H%M%S')),
+#                  index=False, sep=' ',line_terminator='\r')
     
     

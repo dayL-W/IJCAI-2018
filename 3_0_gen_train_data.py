@@ -100,7 +100,7 @@ def gen_one_hot_data():
         data[str_col] = (data[key] != -1) & (data[key]>value)
         data.drop(key, axis=1, inplace=True)
     cols = ['user_gender_id','user_age_level','user_occupation_id'
-            ,'second_cate','item_city_id','item_price_level'
+            ,'second_cate','item_price_level'
             ,'context_page_id','shop_review_num_level']
     
     for col in cols:
