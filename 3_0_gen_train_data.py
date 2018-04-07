@@ -45,7 +45,7 @@ def gen_train_data(file_name='train', test_day=24):
 #    data.drop(cols, inplace=True,axis=1)
     
 #    17号都是缺失值，可以考虑删除
-#    data.drop(data.index[data.day==17],inplace=True, axis=0)
+    data.drop(data.index[data.day==17],inplace=True, axis=0)
     #把销量、价格、收藏次数以下特征取对数
     data['item_sales_level'].replace(to_replace=-1,value=0,inplace=True)
     cols = ['item_sales_level','item_collected_level','item_pv_level']

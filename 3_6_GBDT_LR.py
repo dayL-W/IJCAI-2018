@@ -69,9 +69,9 @@ if __name__ == '__main__':
     cv_data.drop(drop_cols,axis=1,inplace=True)
     test_data.drop(drop_cols,axis=1,inplace=True)
     
-    train_data, _, train_Y, _ = train_test_split(train_data,
-                                                 train_Y,
-                                                 test_size=0.5)
+#    train_data, _, train_Y, _ = train_test_split(train_data,
+#                                                 train_Y,
+#                                                 test_size=0.5)
     
 #    gbc = GradientBoostingClassifier(n_estimators=27,learning_rate=0.1,max_depth=6,max_leaf_nodes=35)
     gbc = GradientBoostingClassifier(n_estimators=27,learning_rate=0.1,max_depth=6, max_leaf_nodes=35)
