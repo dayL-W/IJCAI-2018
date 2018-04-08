@@ -34,14 +34,16 @@ params={
     'objective': 'binary:logistic',
     'eval_metric':'logloss',
     'max_depth':6,
-    'colsample_bytree': 1,
-#    'lambda':1,
-#    'eta':0.2,
+    'colsample_bytree': 0.95,
+    'nthread':40,
+    'gamma':0.6,
+    'lambda':3,
+    'eta':0.3,
 #    'silent':0,
-#    'alpha':3,
+    'alpha':3,
 #    'subsample':1,
 }
-n_round=20
+n_round=35
 
 
 if __name__ == '__main__':

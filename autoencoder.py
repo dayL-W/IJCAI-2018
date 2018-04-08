@@ -57,8 +57,8 @@ class autoencoder(object):
         for i in range(1, num_steps+1):
             batch_x = X.sample(batch_size)
             l,_ = self.sess.run([self.loss,self.optimizer], feed_dict={self.X: batch_x})
-            if i % display_step == 0 or i == 1:
-                print('Step %i: Minibatch Loss: %f' % (i, l))
+#            if i % display_step == 0 or i == 1:
+#                print('Step %i: Minibatch Loss: %f' % (i, l))
     def get_feature(self,X):
         return self.sess.run(self.encoder_op,feed_dict={self.X: X})
     def load_model(self):
