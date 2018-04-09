@@ -40,11 +40,18 @@ def gen_train_data(file_name='train', test_day=24):
     data = pd.concat([user_basic_info,user_search_count,user_search_time,\
                       item_basic_info,item_relative_info,query_item_sim,shop_basic_info,\
                       buy_count,cvr_smooth,cate_prop_cvr],axis=1)
-    #以下特征在训练集和测试集上缺失值特别高，先删去看看
-#    cols = ['user_id_cvr_smooth','user_id_buy_count']
-#    data.drop(cols, inplace=True,axis=1)
     
-#    17号都是缺失值，可以考虑删除
+    #对以下列做onehot
+    cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level']
+    for col in cols:
+        temp_col = pd.get_dummies(data[col],prefix=col)
+        data.drop(col, axis=1, inplace=True)
+        data = pd.concat([data, temp_col],axis=1)
+    #对以下列做填充
+    cols = ['shop_review_positive_rate','shop_score_service','shop_score_delivery','shop_score_description']
+    for col in cols:
+        data[col] = data[col].replace(to_replace=-1,value=data[col].median())
+    #7号都是缺失值，可以考虑删除
     data.drop(data.index[data.day==17],inplace=True, axis=0)
     #把销量、价格、收藏次数以下特征取对数
     data['item_sales_level'].replace(to_replace=-1,value=0,inplace=True)
@@ -60,10 +67,10 @@ def gen_train_data(file_name='train', test_day=24):
         #对训练数据的负样本进行1/7的采样
 #        train_data = build_train_dataset(train_data)
         train_Y = train_data.is_trade.values
-        train_data.drop(['is_trade'],axis=1,inplace=True)
+#        train_data.drop(['is_trade'],axis=1,inplace=True)
         
         test_Y = cv_data.is_trade.values
-        cv_data.drop(['is_trade'],axis=1,inplace=True)
+#        cv_data.drop(['is_trade'],axis=1,inplace=True)
         
         cv_data.reset_index(inplace=True,drop=True)
         train_data.reset_index(inplace=True,drop=True)
@@ -73,6 +80,7 @@ def gen_train_data(file_name='train', test_day=24):
         dump_pickle(cv_data, cache_pkl_path +'cv_data')
         dump_pickle(test_Y, cache_pkl_path +'cv_Y')
     else:
+        data['is_trade'] = 0
         data.reset_index(inplace=True,drop=True)
         dump_pickle(data, cache_pkl_path +'test_data')
     
@@ -99,8 +107,7 @@ def gen_one_hot_data():
         str_col = key+'_gra'+str(value)
         data[str_col] = (data[key] != -1) & (data[key]>value)
         data.drop(key, axis=1, inplace=True)
-    cols = ['user_gender_id','user_age_level','user_occupation_id'
-            ,'second_cate','item_price_level'
+    cols = ['second_cate','item_price_level'
             ,'context_page_id','shop_review_num_level']
     
     for col in cols:
