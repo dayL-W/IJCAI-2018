@@ -39,8 +39,9 @@ if __name__ == '__main__':
     cv_Y = load_pickle(path=cache_pkl_path +'cv_Y')
     
     test_data = load_pickle(path=cache_pkl_path +'test_data')
-#    train_data.drop(train_data.index[train_data.day==17],inplace=True, axis=0)
-#    drop_cols = ['user_id','shop_id','item_id','item_brand_id','user_id_cvr_smooth','user_id_buy_count','cvr_fusion']
+    
+    rate = 0.75
+    train_data = build_train_dataset(train_data, rate)
     drop_cols = ['is_trade']
     train_data.drop(drop_cols,axis=1,inplace=True)
     cv_data.drop(drop_cols,axis=1,inplace=True)
