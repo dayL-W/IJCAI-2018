@@ -99,21 +99,20 @@ def data2libffm(merge_dat,output_name):
     return features_all
 
 # In[]:采样函数
-def split_negative_data(data, n_splits=7):
+def split_negative_data(data, n_splits=1):
     negative_data = data[data['is_trade']==0]
     data_length = len(negative_data.index)
     shuffled_index = random.sample(range(data_length), len(list(negative_data.index)))
-    splitted_data = []
-    batch_length = int(len(negative_data.index)/n_splits)
-    for i in range(n_splits-1):
-        #splitted_data.append(negative_data.iloc[shuffled_index[i*batch_length:(i+1)*batch_length], :])
-        splitted_data.append(negative_data.iloc[shuffled_index[i*batch_length:(i+1)*batch_length], :])
+    splitted_data = None
+    batch_length = int(data_length*n_splits)
+    
+    splitted_data = negative_data.iloc[shuffled_index[0:batch_length],:]
     return splitted_data
         
-def build_train_dataset(data, n_splits=7):
+def build_train_dataset(data, n_splits=1):
     splitted_negative_data = split_negative_data(data, n_splits)
     postive_data = data[data['is_trade']==1]
-    train = pd.concat([splitted_negative_data[0], postive_data])
+    train = pd.concat([splitted_negative_data, postive_data],axis=0)
     train = train.sample(frac=1)
 #    dump_pickle(train, raw_data_path+'splitted_train.pkl')
     return train
