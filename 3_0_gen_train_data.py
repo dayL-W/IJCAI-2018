@@ -10,7 +10,7 @@ import numpy as np
 import time
 import datetime
 import os
-
+import random
 from utils import raw_data_path,feature_data_path,result_path,cache_pkl_path,dump_pickle,load_pickle,build_train_dataset,cal_log_loss
 from smooth import BayesianSmoothing
 import gen_smooth_features as smooth_features
@@ -42,11 +42,11 @@ def gen_train_data(file_name='train', test_day=24):
                       buy_count,cvr_smooth,cate_prop_cvr],axis=1)
     
     #对以下列做onehot
-    cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level']
-    for col in cols:
-        temp_col = pd.get_dummies(data[col],prefix=col)
-        data.drop(col, axis=1, inplace=True)
-        data = pd.concat([data, temp_col],axis=1)
+#    cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level']
+#    for col in cols:
+#        temp_col = pd.get_dummies(data[col],prefix=col)
+#        data.drop(col, axis=1, inplace=True)
+#        data = pd.concat([data, temp_col],axis=1)
     #对以下列做填充
     cols = ['shop_review_positive_rate','shop_score_service','shop_score_delivery','shop_score_description']
     for col in cols:
@@ -61,8 +61,14 @@ def gen_train_data(file_name='train', test_day=24):
         
     if file_name == 'train':
         #划分训练数据和测试数据
-        train_data = data.loc[data.day<test_day,:].copy()
-        cv_data = data.loc[data.day>=test_day,:].copy()
+        data_length = len(data.index)
+        shuffled_index = random.sample(range(data_length), data_length)
+        cv_length = int(data_length*0.2)
+        
+        cv_data = data.iloc[shuffled_index[0:cv_length],:]
+        train_data = data.iloc[shuffled_index[cv_length:],:]
+#        train_data = data.loc[data.day<test_day,:].copy()
+#        cv_data = data.loc[data.day>=test_day,:].copy()
         
         #对训练数据的负样本进行1/7的采样
 #        train_data = build_train_dataset(train_data)
