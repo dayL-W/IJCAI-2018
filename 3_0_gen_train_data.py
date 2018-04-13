@@ -61,14 +61,14 @@ def gen_train_data(file_name='train', test_day=24):
         
     if file_name == 'train':
         #划分训练数据和测试数据
-        data_length = len(data.index)
-        shuffled_index = random.sample(range(data_length), data_length)
-        cv_length = int(data_length*0.2)
-        
-        cv_data = data.iloc[shuffled_index[0:cv_length],:]
-        train_data = data.iloc[shuffled_index[cv_length:],:]
-#        train_data = data.loc[data.day<test_day,:].copy()
-#        cv_data = data.loc[data.day>=test_day,:].copy()
+#        data_length = len(data.index)
+#        shuffled_index = random.sample(range(data_length), data_length)
+#        cv_length = int(data_length*0.2)
+#        
+#        cv_data = data.iloc[shuffled_index[0:cv_length],:]
+#        train_data = data.iloc[shuffled_index[cv_length:],:]
+        train_data = data.loc[data.day<test_day,:].copy()
+        cv_data = data.loc[data.day>=test_day,:].copy()
         
         #对训练数据的负样本进行1/7的采样
 #        train_data = build_train_dataset(train_data)

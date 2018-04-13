@@ -38,66 +38,134 @@ params={
     'nthread':40,
     'gamma':0.6,
     'lambda':3,
-    'eta':0.3,
+    'eta':0.03,
 #    'silent':0,
     'alpha':3,
 #    'subsample':1,
 }
-n_round=35
+    
+#params={  
+#    'booster':'gbtree',   
+#    'objective': 'binary:logistic',
+#    'max_depth':5,
+#    #'lambda':450,  
+#    'subsample':0.8,
+#    'colsample_bytree':0.8,
+#    #'min_child_weight':12
+#    'eta': 5e-2,
+#    'seed':2018,  
+#    'lambda':0,
+#    'nthread':4,
+#    'eval_metric': 'logloss',
+#}
+n_round=500
 
 
+def xgb_offline(train_data, cv_data):
+    
+    train_Y = train_data['is_trade'].values
+    cv_Y = cv_data['is_trade'].values
+    
+    drop_cols = ['is_trade']
+    train_data.drop(drop_cols,axis=1,inplace=True)
+    cv_data.drop(drop_cols,axis=1,inplace=True)
+    print('train shap:',train_data.shape)
+    print('cv shape', cv_data.shape)
+    
+    kf = KFold(len(train_data), n_folds = 5, shuffle=True, random_state=520)
+    
+    train_preds = np.zeros(train_data.shape[0])
+    cv_preds = np.zeros(train_data.shape[0])
+    test_preds = np.zeros((cv_data.shape[0], 5))
+    
+    for i, (train_index, cv_index) in enumerate(kf):
+        print('第{}次训练...'.format(i))
+        train_feat = train_data.iloc[train_index]
+        cv_feat = train_data.iloc[cv_index]
+        
+        train_feat = xgb.DMatrix(train_feat.values, label=train_Y[train_index])
+        cv_feat = xgb.DMatrix(cv_feat.values,label=train_Y[cv_index])
+        test_feat = xgb.DMatrix(cv_data.values)
+        watchlist = [(train_feat, 'train'),(cv_feat, 'val')]
+
+        
+        clf = xgb.train(params=params, dtrain=train_feat,num_boost_round=n_round,\
+            evals=watchlist,early_stopping_rounds=30,verbose_eval=False)
+    
+        predict_train = clf.predict(train_feat)
+        predict_cv = clf.predict(cv_feat)
+        predict_test = clf.predict(test_feat)
+        
+        train_preds[train_index] += predict_train
+        cv_preds[cv_index] += predict_cv
+        test_preds[:,i] = predict_test
+        
+        print(clf.best_iteration)
+        print(clf.best_score)
+        print('  训练损失:',cal_log_loss(predict_train, train_Y[train_index]))
+        print('  测试损失:',cal_log_loss(predict_cv, train_Y[cv_index]))
+    predict_test = np.median(test_preds,axis=1)
+    print('训练损失:',cal_log_loss(train_preds/4, train_Y))
+    print('测试损失:',cal_log_loss(cv_preds, train_Y))
+    print('验证损失:',cal_log_loss(predict_test, cv_Y))
+    return clf
+
+def xgb_online(train_data, cv_data, test_data):
+    train_data = pd.concat([train_data,cv_data],axis=0)
+    train_Y = train_data['is_trade'].values
+    
+    drop_cols = ['is_trade']
+    train_data.drop(drop_cols,axis=1,inplace=True)
+    cv_data.drop(drop_cols,axis=1,inplace=True)
+    test_data.drop(drop_cols,axis=1,inplace=True)
+    print('train shap:',train_data.shape)
+    
+    kf = KFold(len(train_data), n_folds = 5, shuffle=True, random_state=520)
+    
+    train_preds = np.zeros(train_data.shape[0])
+    cv_preds = np.zeros(train_data.shape[0])
+    test_preds = np.zeros((test_data.shape[0], 5))
+    for i, (train_index, cv_index) in enumerate(kf):
+        print('第{}次训练...'.format(i))
+        train_feat = train_data.iloc[train_index]
+        cv_feat = train_data.iloc[cv_index]
+        
+        train_feat = xgb.DMatrix(train_feat.values, label=train_Y[train_index])
+        cv_feat = xgb.DMatrix(cv_feat.values,label=train_Y[cv_index])
+        test_feat = xgb.DMatrix(test_data.values)
+        
+        watchlist = [(train_feat, 'train'),(cv_feat, 'val')]
+        clf = xgb.train(params=params, dtrain=train_feat,num_boost_round=n_round,\
+            evals=watchlist,early_stopping_rounds=30,verbose_eval=False)
+    
+        predict_train = clf.predict(train_feat)
+        predict_cv = clf.predict(cv_feat)
+        predict_test = clf.predict(test_feat)
+        
+        train_preds[train_index] += predict_train
+        cv_preds[cv_index] += predict_cv
+        test_preds[:,i] = predict_test
+        
+        print(clf.best_iteration)
+        print(clf.best_score)
+        print('  训练损失:',cal_log_loss(predict_train, train_Y[train_index]))
+        print('  测试损失:',cal_log_loss(predict_cv, train_Y[cv_index]))
+    print('训练损失:',cal_log_loss(train_preds/4, train_Y))
+    print('测试损失:',cal_log_loss(cv_preds, train_Y))
+    predict_test = np.mean(test_preds,axis=1)
+    submmit_result(predict_test,'XGB')
 if __name__ == '__main__':
     
     t0 = time.time()
     train_data = load_pickle(path=cache_pkl_path +'train_data')
-    train_Y = load_pickle(path=cache_pkl_path +'train_Y')
     cv_data = load_pickle(path=cache_pkl_path +'cv_data')
-    cv_Y = load_pickle(path=cache_pkl_path +'cv_Y')
-    
     test_data = load_pickle(path=cache_pkl_path +'test_data')
     
-    print('train shap:',train_data.shape)
-    print('cv shape', cv_data.shape)
-    print('test shape', test_data.shape)
-
     
-    
-    
-    kf = KFold(len(train_data), n_folds = 5, shuffle=True, random_state=520)
-    
-    train_cv_preds = np.zeros(train_data.shape[0])
-    cv_preds = np.zeros((cv_data.shape[0], 5))
-    test_preds = np.zeros((test_data.shape[0], 5))
-    for i, (train_index, train_cv_index) in enumerate(kf):
-        print('第{}次训练...'.format(i))
-        train_feat = train_data.iloc[train_index]
-        train_cv_feat = train_data.iloc[train_cv_index]
-        
-        train_feat = xgb.DMatrix(train_feat.values, label=train_Y[train_index])
-        train_cv_feat = xgb.DMatrix(train_cv_feat.values)
-        cv_feat = xgb.DMatrix(cv_data.values)
-        test_feat = xgb.DMatrix(test_data.values)
-        
-        clf = xgb.train(params=params, dtrain=train_feat,num_boost_round=n_round)
-    
-        predict_train = clf.predict(train_feat)
-        predict_train_cv = clf.predict(train_cv_feat)
-        predict_cv = clf.predict(cv_feat)
-        predict_test = clf.predict(test_feat)
-        
-        train_cv_preds[train_cv_index] = predict_train_cv
-        cv_preds[:,i] = predict_cv
-        test_preds[:,i] = predict_test
-        
-        print('  训练损失:',cal_log_loss(predict_train, train_Y[train_index]))
-        print('  测试损失:',cal_log_loss(predict_train_cv, train_Y[train_cv_index]))
-    print('训练损失:',cal_log_loss(train_cv_preds, train_Y))
-    print('测试损失:',cal_log_loss(np.mean(cv_preds,axis=1), cv_Y))
+    xgb_temp = xgb_online(train_data, cv_data, test_data)
     
     t1 = time.time()
     print('训练用时:',t1-t0)
-    
-    submmit_result(predict_test,'XGB_CV')
 #    #查看特征重要度
 #    features = train_data.columns
 #    ceate_feature_map(features)

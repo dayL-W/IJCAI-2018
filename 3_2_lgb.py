@@ -18,8 +18,32 @@ from sklearn.cross_validation import KFold,train_test_split
 import lightgbm as lgb
 
 rate = 0.75
+#params = {
+#    'max_depth': 4,                 #4
+##    'min_data_in_leaf': 40,-
+#    'feature_fraction': 1,       #1
+#    'learning_rate': 0.04,          #0.04
+#    'boosting_type': 'gbdt',
+#    'objective': 'binary',
+##    'verbose': -1,
+#    'metric': 'binary_logloss',
+##    'lambda_l2':0.2
+#}
+
+#params = {
+#    'max_depth': 8,                 #4
+##    'min_data_in_leaf': 40,-
+#    'feature_fraction': 1,       #1
+#    'learning_rate': 0.02,          #0.04
+#    'boosting_type': 'gbdt',
+#    'objective': 'binary',
+##    'verbose': -1,
+#    'metric': 'binary_logloss',
+#    'lambda_l2':2
+#}
+
 params = {
-    'max_depth': 4,                 #4
+    'max_depth': 7,                 #4
 #    'min_data_in_leaf': 40,-
     'feature_fraction': 1,       #1
     'learning_rate': 0.04,          #0.04
@@ -27,14 +51,23 @@ params = {
     'objective': 'binary',
 #    'verbose': -1,
     'metric': 'binary_logloss',
-#    'lambda_l2':0.2
+    'lambda_l2':1.8,
+    'lambda_l1':3.3
 }
-
 def lgb_online(train_data, cv_data, test_data):
     
     train_data = pd.concat([train_data, cv_data],axis=0)
     train_data = build_train_dataset(train_data, rate)
     train_Y = train_data['is_trade'].values
+    
+#    train_data = pd.concat([train_data, cv_data],axis=0)
+#    train_data = build_train_dataset(train_data, rate)
+#    train_Y = train_data['is_trade'].values
+    
+    drop_cols = ['is_trade']
+    train_data.drop(drop_cols,axis=1,inplace=True)
+    cv_data.drop(drop_cols,axis=1,inplace=True)
+    test_data.drop(drop_cols,axis=1,inplace=True)
     
     kf = KFold(len(train_data), n_folds = 5, shuffle=True, random_state=520)
     train_preds = np.zeros(train_data.shape[0])
@@ -52,7 +85,7 @@ def lgb_online(train_data, cv_data, test_data):
                         num_boost_round=6000,
                         valid_sets=lgb_cv,
                         verbose_eval=False,
-                        early_stopping_rounds=200)
+                        early_stopping_rounds=500)
         #评价特征的重要性
         feat_imp = pd.Series(gbm.feature_importance(), index=train_data.columns).sort_values(ascending=False)
         
@@ -64,7 +97,8 @@ def lgb_online(train_data, cv_data, test_data):
         cv_preds[cv_index] += predict_cv
         
         feat_imp = pd.Series(gbm.feature_importance(), index=train_data.columns).sort_values(ascending=False)
-    
+        print(gbm.best_iteration)
+        print(gbm.best_score)
         print('   训练损失:',cal_log_loss(predict_train, train_Y[train_index]))
         print('   测试损失:',cal_log_loss(predict_cv, train_Y[cv_index]))
     predict_test = np.median(test_preds,axis=1)
@@ -73,6 +107,7 @@ def lgb_online(train_data, cv_data, test_data):
     print('训练损失:',cal_log_loss(train_preds/4, train_Y))
     print('测试损失:',cal_log_loss(cv_preds, train_Y))
     submmit_result(predict_test, 'LGB')
+    return gbm, feat_imp
 
 def lgb_offline(train_data, cv_data):
     
@@ -112,7 +147,8 @@ def lgb_offline(train_data, cv_data):
         cv_preds[cv_index] += predict_cv
         
         feat_imp = pd.Series(gbm.feature_importance(), index=train_data.columns).sort_values(ascending=False)
-    
+        print(gbm.best_iteration)
+        print(gbm.best_score)
         print('   训练损失:',cal_log_loss(predict_train, train_Y[train_index]))
         print('   测试损失:',cal_log_loss(predict_cv, train_Y[cv_index]))
     predict_test = np.median(test_preds,axis=1)
@@ -121,6 +157,8 @@ def lgb_offline(train_data, cv_data):
     print('训练损失:',cal_log_loss(train_preds/4, train_Y))
     print('测试损失:',cal_log_loss(cv_preds, train_Y))
     print('验证损失:',cal_log_loss(predict_test, cv_Y))
+    
+    return gbm,feat_imp
 if __name__ == '__main__':
     
     
@@ -129,41 +167,17 @@ if __name__ == '__main__':
     cv_data = load_pickle(path=cache_pkl_path +'cv_data')
     test_data = load_pickle(path=cache_pkl_path +'test_data')
     
-    lgb_offline(train_data, cv_data)
-    
+    cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level',\
+            'item_brand_id','item_city_id','query_item_second_cate_sim','query_item_second_cate_sim',\
+            'user_id_buy_count','item_id_buy_count','item_brand_id_buy_count','shop_id_buy_count',\
+            'user_id_cvr_smooth','item_id_cvr_smooth','item_brand_id_cvr_smooth','shop_id_cvr_smooth',\
+            'max_cp_cvr','min_cp_cvr','mean_cp_cvr']
+    for i in cols:
+        train_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
+        cv_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
+        test_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
+#    gbm, feat_imp = lgb_online(train_data, cv_data,test_data)
+    gbm, feat_imp = lgb_offline(train_data, cv_data)
     t1 = time.time()
     print('训练时间:',t1-t0)
     
-    
-#    lgb_train = lgb.Dataset(train_data.values, train_Y)
-#    lgb_cv = lgb.Dataset(cv_data.values, cv_Y)
-#    gbm = lgb.train(params=params,            #参数
-#                    train_set=lgb_train,      #要训练的数据
-#                    num_boost_round=6000,     #迭代次数
-#                    valid_sets=lgb_cv,        #训练时需要评估的列表
-#                    verbose_eval=False,       #
-#                    
-#                    early_stopping_rounds=200)
-#    
-#    predict_train = gbm.predict(train_data.values)
-#    predict_cv = gbm.predict(cv_data.values)
-#    predict_test = gbm.predict(test_data.values)
-#    
-#    feat_imp = pd.Series(gbm.feature_importance(), index=train_data.columns).sort_values(ascending=False)
-#
-#    print('训练损失:',cal_log_loss(predict_train, train_Y))
-#    print('测试损失:',cal_log_loss(predict_cv, cv_Y))
-#    t1 = time.time()
-#    print('训练时间:',t1 - t0)
-#    
-##    全量评测
-#    train_data = pd.concat([train_data, cv_data],axis=0)
-#    train_Y = np.append(train_Y, cv_Y)
-#    
-#    lgb_train = lgb.Dataset(train_data.values, train_Y)
-#    gbm = lgb.train(params=params,            #参数
-#                    train_set=lgb_train,      #要训练的数据
-#                    num_boost_round=300,     #迭代次数
-#                    verbose_eval=True)
-#    predict_test = gbm.predict(test_data.values)
-#    print('训练损失:',cal_log_loss(gbm.predict(train_data.values), train_Y))
