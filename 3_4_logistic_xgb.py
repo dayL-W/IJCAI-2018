@@ -46,9 +46,10 @@ if __name__ == '__main__':
     test = pd.read_table(raw_data_path + test_file,delim_whitespace=True)
     test_id = test.instance_id
     
-    train_data.drop(['user_id','shop_id','item_id','item_brand_id'],axis=1,inplace=True)
-    cv_data.drop(['user_id','shop_id','item_id','item_brand_id'],axis=1,inplace=True)
-    test_data.drop(['user_id','shop_id','item_id','item_brand_id'],axis=1,inplace=True)
+    drop_cols = ['is_trade','user_id','shop_id','item_id','item_brand_id']
+    train_data.drop(drop_cols,axis=1,inplace=True)
+    cv_data.drop(drop_cols,axis=1,inplace=True)
+    test_data.drop(drop_cols,axis=1,inplace=True)
     
     
     print('train shap:',train_data.shape)

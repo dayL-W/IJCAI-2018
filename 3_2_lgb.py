@@ -119,7 +119,7 @@ def lgb_online(train_data, cv_data, test_data):
     print(params)
     print('训练损失:',cal_log_loss(train_preds/4, train_Y))
     print('测试损失:',cal_log_loss(cv_preds, train_Y))
-#    submmit_result(predict_test, 'LGB')
+    submmit_result(predict_test, 'LGB')
     return gbm, feat_imp
 
 def lgb_offline(train_data, cv_data):
@@ -180,7 +180,7 @@ if __name__ == '__main__':
     t0 = time.time()
     train_data = load_pickle(path=cache_pkl_path +'train_data')
     cv_data = load_pickle(path=cache_pkl_path +'cv_data')
-    test_data = load_pickle(path=cache_pkl_path +'test_data')      
+    test_data = load_pickle(path=cache_pkl_path +'test_data')
     
     cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level',\
             'item_brand_id','item_city_id','query_item_second_cate_sim','query_item_second_cate_sim',\
@@ -191,8 +191,8 @@ if __name__ == '__main__':
         train_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
         cv_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
         test_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
-#    gbm, feat_imp = lgb_online(train_data, cv_data,test_data)
-    gbm, feat_imp = lgb_offline(train_data, cv_data)
+    gbm, feat_imp = lgb_online(train_data, cv_data,test_data)
+#    gbm, feat_imp = lgb_offline(train_data, cv_data)
     t1 = time.time()
     print('训练时间:',t1-t0)
     

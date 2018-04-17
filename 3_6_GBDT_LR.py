@@ -60,11 +60,11 @@ if __name__ == '__main__':
     
     test_data = load_pickle(path=cache_pkl_path +'test_data_onehot')
     
-    drop_cols = ['user_id','shop_id','item_id','item_brand_id','item_city_id']
+    drop_cols = ['user_id','shop_id','item_id','item_brand_id']
     train_id_df = train_data[drop_cols]
     cv_id_df = cv_data[drop_cols]
     test_id_df = test_data[drop_cols]
-    
+    drop_cols = ['user_id','shop_id','item_id','item_brand_id','is_trade']
     train_data.drop(drop_cols,axis=1,inplace=True)
     cv_data.drop(drop_cols,axis=1,inplace=True)
     test_data.drop(drop_cols,axis=1,inplace=True)
