@@ -12,7 +12,7 @@ from utils import load_pickle, raw_data_path, feature_data_path, cache_pkl_path,
 if __name__ == '__main__':
     
     
-    XGB = pd.read_csv('../result/XGB_20180417_164905.txt',sep=' ')
+    XGB = pd.read_csv('../result/XGB_20180417_212149.txt',sep=' ')
     LGB = pd.read_csv('../result/LGB_20180417_160159.txt',sep=' ')
     FFM = pd.read_csv('../result/FFM_20180417_150554.txt',sep=' ')
     

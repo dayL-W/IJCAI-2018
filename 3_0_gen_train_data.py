@@ -37,6 +37,8 @@ def gen_train_data(file_name='train', test_day=24):
     buy_count = load_pickle(path=feature_data_path + file_name + '_buy_count')
     cvr_smooth = load_pickle(path=feature_data_path + file_name + '_cvr_smooth')
     cate_prop_cvr = load_pickle(path=feature_data_path + file_name + '_cate_prop_cvr')
+    
+    view_count = load_pickle(path=feature_data_path + file_name + '_count')
     data = pd.concat([user_basic_info,user_search_count,user_search_time,\
                       item_basic_info,item_relative_info,query_item_sim,shop_basic_info,\
                       buy_count,cvr_smooth,cate_prop_cvr],axis=1)

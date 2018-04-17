@@ -231,9 +231,50 @@ def gen_cvr_smooth(file_name='train'):
         #保存数据
         cvr_path = feature_data_path + 'test_cvr_smooth'
         dump_pickle(feat_all, cvr_path)
+        
+# In[]
+def gen_count(file_name='train'):
+    
+    data = load_pickle(path=raw_data_path + file_name + '.pkl')
+    cols = ['user_id','item_id', 'item_brand_id', 'second_cate', 'shop_id']
+    if file_name == 'train':
+        #对每个特征
+        feat_all = None
+        for col in cols:
+            #对于每一天
+            col_feat_all = None
+            for day in (data.day).unique():
+                col_I = col+'_I'
+                filter_data = data.loc[data.day < day, [col, 'is_trade']]
+                I = filter_data.groupby(col)['is_trade'].size().reset_index()
+                I.columns = [col, col_I]
+                I = I.set_index(col)[col_I]
+                col_feat = data.loc[data.day==day, ['instance_id', col]]
+                col_feat[col_I] = col_feat.apply(lambda x: I[x[col]] if x[col] in I.index else -1, axis=1)
+                col_feat_all = pd.concat([col_feat_all,col_feat], axis=0)
+            feat_all = pd.concat([feat_all,col_feat_all[col_I]], axis=1)
+            cvr_path = feature_data_path + 'train_count'
+            dump_pickle(feat_all, cvr_path)
+    if file_name == 'test':
+        #对每个特征
+        train_data = load_pickle(path=raw_data_path + 'train' + '.pkl')
+        feat_all = None
+        for col in cols:
+            col_I = col+'_I'
+            filter_data = train_data.loc[:,[col, 'is_trade']]
+            I = filter_data.groupby(col)['is_trade'].size().reset_index()
+            I.columns = [col, col_I]
+            I = I.set_index(col)[col_I]
+            col_feat = data.loc[:, ['instance_id', col]]
+            col_feat[col_I] = col_feat.apply(lambda x: I[x[col]] if x[col] in I.index else -1, axis=1)
+            
+            feat_all = pd.concat([feat_all,col_feat[col_I]], axis=1)
+            cvr_path = feature_data_path + 'test_count'
+            dump_pickle(feat_all, cvr_path)
 # In[]
 if __name__ == '__main__':
     gen_cvr_smooth('train')
     gen_cvr_smooth('test')
-
+    gen_count('train')
+    gen_count('test')
 

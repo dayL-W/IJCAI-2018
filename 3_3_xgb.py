@@ -54,7 +54,7 @@ def xgb_offline(train_data, cv_data):
     train_Y = train_data['is_trade'].values
     cv_Y = cv_data['is_trade'].values
     
-    drop_cols = ['is_trade']
+    drop_cols = ['is_trade','user_id_buy_count','is_before_dawn','day','second_cate']
     train_data.drop(drop_cols,axis=1,inplace=True)
     cv_data.drop(drop_cols,axis=1,inplace=True)
     print('train shap:',train_data.shape)
@@ -114,7 +114,7 @@ def xgb_online(train_data, cv_data, test_data):
     train_data.reset_index(inplace=True,drop=True)
     train_Y = train_data['is_trade'].values
     
-    drop_cols = ['is_trade']
+    drop_cols = ['is_trade','user_id_buy_count','is_before_dawn','day','second_cate']
     train_data.drop(drop_cols,axis=1,inplace=True)
     cv_data.drop(drop_cols,axis=1,inplace=True)
     test_data.drop(drop_cols,axis=1,inplace=True)
@@ -184,8 +184,8 @@ if __name__ == '__main__':
         cv_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
         test_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
     
-#    feat_imp, clf = xgb_online(train_data, cv_data, test_data)
-    feat_imp, clf = xgb_offline(train_data, cv_data)
+    feat_imp, clf = xgb_online(train_data, cv_data, test_data)
+#    feat_imp, clf = xgb_offline(train_data, cv_data)
     
     t1 = time.time()
     print('训练用时:',t1-t0)
