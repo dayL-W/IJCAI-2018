@@ -10,7 +10,7 @@ import numpy as np
 import time
 import datetime
 import os
-
+import operator
 from utils import raw_data_path,feature_data_path,result_path,cache_pkl_path,dump_pickle,load_pickle,build_train_dataset,cal_log_loss,submmit_result
 from smooth import BayesianSmoothing
 import gen_smooth_features as smooth_features
@@ -34,35 +34,23 @@ params={
     'objective': 'binary:logistic',
     'eval_metric':'logloss',
     'max_depth':6,
-    'colsample_bytree': 0.95,
+    'colsample_bytree': 0.85,
     'nthread':40,
     'gamma':0.6,
-    'lambda':3,
+    'lambda':2,
     'eta':0.03,
 #    'silent':0,
-    'alpha':3,
+    'alpha':1,
 #    'subsample':1,
 }
-    
-#params={  
-#    'booster':'gbtree',   
-#    'objective': 'binary:logistic',
-#    'max_depth':5,
-#    #'lambda':450,  
-#    'subsample':0.8,
-#    'colsample_bytree':0.8,
-#    #'min_child_weight':12
-#    'eta': 5e-2,
-#    'seed':2018,  
-#    'lambda':0,
-#    'nthread':4,
-#    'eval_metric': 'logloss',
-#}
+
 n_round=500
 
-
+rate = 0.77
 def xgb_offline(train_data, cv_data):
     
+    train_data = build_train_dataset(train_data, rate)
+    train_data.reset_index(inplace=True,drop=True)
     train_Y = train_data['is_trade'].values
     cv_Y = cv_data['is_trade'].values
     
@@ -104,14 +92,26 @@ def xgb_offline(train_data, cv_data):
         print(clf.best_score)
         print('  训练损失:',cal_log_loss(predict_train, train_Y[train_index]))
         print('  测试损失:',cal_log_loss(predict_cv, train_Y[cv_index]))
+    #特征重要度
+    features = train_data.columns
+    ceate_feature_map(features)
+    importance = clf.get_fscore(fmap='xgb.fmap')
+    importance = sorted(importance.items(), key=operator.itemgetter(1))
+    df = pd.DataFrame(importance, columns=['feature', 'fscore'])  
+    df['fscore'] = df['fscore'] / df['fscore'].sum()
+    
     predict_test = np.median(test_preds,axis=1)
+    predict_test = predict_test/(predict_test+(1-predict_test)/rate)
     print('训练损失:',cal_log_loss(train_preds/4, train_Y))
     print('测试损失:',cal_log_loss(cv_preds, train_Y))
     print('验证损失:',cal_log_loss(predict_test, cv_Y))
-    return clf
+    return df, clf
 
 def xgb_online(train_data, cv_data, test_data):
+    train_data = build_train_dataset(train_data, rate)
     train_data = pd.concat([train_data,cv_data],axis=0)
+    
+    train_data.reset_index(inplace=True,drop=True)
     train_Y = train_data['is_trade'].values
     
     drop_cols = ['is_trade']
@@ -150,10 +150,23 @@ def xgb_online(train_data, cv_data, test_data):
         print(clf.best_score)
         print('  训练损失:',cal_log_loss(predict_train, train_Y[train_index]))
         print('  测试损失:',cal_log_loss(predict_cv, train_Y[cv_index]))
+        
+    #特征重要度
+    features = train_data.columns
+    ceate_feature_map(features)
+    importance = clf.get_fscore(fmap='xgb.fmap')
+    importance = sorted(importance.items(), key=operator.itemgetter(1))
+    df = pd.DataFrame(importance, columns=['feature', 'fscore'])  
+    df['fscore'] = df['fscore'] / df['fscore'].sum()
+    
     print('训练损失:',cal_log_loss(train_preds/4, train_Y))
     print('测试损失:',cal_log_loss(cv_preds, train_Y))
-    predict_test = np.mean(test_preds,axis=1)
+    predict_test = np.median(test_preds,axis=1)
+    predict_test = predict_test/(predict_test+(1-predict_test)/rate)
     submmit_result(predict_test,'XGB')
+    
+    return df,clf
+
 if __name__ == '__main__':
     
     t0 = time.time()
@@ -161,21 +174,21 @@ if __name__ == '__main__':
     cv_data = load_pickle(path=cache_pkl_path +'cv_data')
     test_data = load_pickle(path=cache_pkl_path +'test_data')
     
+    cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level',\
+            'item_brand_id','item_city_id','query_item_second_cate_sim','query_item_second_cate_sim',\
+            'user_id_buy_count','item_id_buy_count','item_brand_id_buy_count','shop_id_buy_count',\
+            'user_id_cvr_smooth','item_id_cvr_smooth','item_brand_id_cvr_smooth','shop_id_cvr_smooth',\
+            'max_cp_cvr','min_cp_cvr','mean_cp_cvr']
+    for i in cols:
+        train_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
+        cv_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
+        test_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
     
-    xgb_temp = xgb_online(train_data, cv_data, test_data)
+#    feat_imp, clf = xgb_online(train_data, cv_data, test_data)
+    feat_imp, clf = xgb_offline(train_data, cv_data)
     
     t1 = time.time()
     print('训练用时:',t1-t0)
-#    #查看特征重要度
-#    features = train_data.columns
-#    ceate_feature_map(features)
-#    
-#    importance = clf.get_fscore(fmap='xgb.fmap')
-#    importance = sorted(importance.items(), key=operator.itemgetter(1))
-#    
-#    df = pd.DataFrame(importance, columns=['feature', 'fscore'])  
-#    df['fscore'] = df['fscore'] / df['fscore'].sum()
-#    
 #    plt.figure()
 #    df.plot(kind='barh', x='feature', y='fscore', legend=False, figsize=(6, 10))  
 #    plt.title('XGBoost Feature Importance')  

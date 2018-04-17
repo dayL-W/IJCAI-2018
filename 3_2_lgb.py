@@ -17,7 +17,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.cross_validation import KFold,train_test_split
 import lightgbm as lgb
 
-rate = 0.75
+rate = 0.79
 #params = {
 #    'max_depth': 4,                 #4
 ##    'min_data_in_leaf': 40,-
@@ -42,27 +42,41 @@ rate = 0.75
 #    'lambda_l2':2
 #}
 
+#params = {
+#    'max_depth': 7,                 #4
+##    'min_data_in_leaf': 40,-
+#    'feature_fraction': 1,       #1
+#    'learning_rate': 0.04,          #0.04
+#    'boosting_type': 'gbdt',
+#    'objective': 'binary',
+##    'verbose': -1,
+#    'metric': 'binary_logloss',
+#    'lambda_l2':1.8,
+#    'lambda_l1':3.3
+#}
+
 params = {
-    'max_depth': 7,                 #4
+    'max_depth': 8,                 #4
 #    'min_data_in_leaf': 40,-
-    'feature_fraction': 1,       #1
+    'feature_fraction': 0.55,       #1
     'learning_rate': 0.04,          #0.04
     'boosting_type': 'gbdt',
     'objective': 'binary',
 #    'verbose': -1,
     'metric': 'binary_logloss',
-    'lambda_l2':1.8,
-    'lambda_l1':3.3
+#    'max_bin':180,
+    'bagging_seed':3,
+    'feature_fraction_seed':3,
+#    'num_leaves':200
+    'lambda_l2':1.5,
+    'lambda_l1':1.5
 }
 def lgb_online(train_data, cv_data, test_data):
     
     train_data = pd.concat([train_data, cv_data],axis=0)
     train_data = build_train_dataset(train_data, rate)
-    train_Y = train_data['is_trade'].values
-    
-#    train_data = pd.concat([train_data, cv_data],axis=0)
-#    train_data = build_train_dataset(train_data, rate)
-#    train_Y = train_data['is_trade'].values
+    train_data.reset_index(inplace=True,drop=True)
+    train_Y = train_data['is_trade']
     
     drop_cols = ['is_trade']
     train_data.drop(drop_cols,axis=1,inplace=True)
@@ -75,11 +89,10 @@ def lgb_online(train_data, cv_data, test_data):
     test_preds = np.zeros((test_data.shape[0], 5))
     for i, (train_index, cv_index) in enumerate(kf):
         print('第{}次训练...'.format(i))
-        train_feat = train_data.iloc[train_index]
-        cv_feat = train_data.iloc[cv_index]
-    
-        lgb_train = lgb.Dataset(train_feat.values, train_Y[train_index])
-        lgb_cv = lgb.Dataset(cv_feat.values, train_Y[cv_index])
+        train_feat = train_data.loc[train_index]
+        cv_feat = train_data.loc[cv_index]
+        lgb_train = lgb.Dataset(train_feat.values, train_Y.loc[train_index])
+        lgb_cv = lgb.Dataset(cv_feat.values, train_Y.loc[cv_index])
         gbm = lgb.train(params=params,
                         train_set=lgb_train,
                         num_boost_round=6000,
@@ -99,21 +112,22 @@ def lgb_online(train_data, cv_data, test_data):
         feat_imp = pd.Series(gbm.feature_importance(), index=train_data.columns).sort_values(ascending=False)
         print(gbm.best_iteration)
         print(gbm.best_score)
-        print('   训练损失:',cal_log_loss(predict_train, train_Y[train_index]))
-        print('   测试损失:',cal_log_loss(predict_cv, train_Y[cv_index]))
+        print('   训练损失:',cal_log_loss(predict_train, train_Y.loc[train_index]))
+        print('   测试损失:',cal_log_loss(predict_cv, train_Y.loc[cv_index]))
     predict_test = np.median(test_preds,axis=1)
     predict_test = predict_test/(predict_test+(1-predict_test)/rate)
     print(params)
     print('训练损失:',cal_log_loss(train_preds/4, train_Y))
     print('测试损失:',cal_log_loss(cv_preds, train_Y))
-    submmit_result(predict_test, 'LGB')
+#    submmit_result(predict_test, 'LGB')
     return gbm, feat_imp
 
 def lgb_offline(train_data, cv_data):
     
     train_data = build_train_dataset(train_data, rate)
-    train_Y = train_data['is_trade'].values
-    cv_Y = cv_data['is_trade'].values
+    train_data.reset_index(inplace=True,drop=True)
+    train_Y = train_data['is_trade']
+    cv_Y = cv_data['is_trade']
     
     drop_cols = ['is_trade']
     train_data.drop(drop_cols,axis=1,inplace=True)
@@ -124,12 +138,13 @@ def lgb_offline(train_data, cv_data):
     cv_preds = np.zeros(train_data.shape[0])
     test_preds = np.zeros((cv_data.shape[0], 5))
     for i, (train_index, cv_index) in enumerate(kf):
+        
+        train_feat = train_data.loc[train_index]
+        cv_feat = train_data.loc[cv_index]
+        
         print('第{}次训练...'.format(i))
-        train_feat = train_data.iloc[train_index]
-        cv_feat = train_data.iloc[cv_index]
-    
-        lgb_train = lgb.Dataset(train_feat.values, train_Y[train_index])
-        lgb_cv = lgb.Dataset(cv_feat.values, train_Y[cv_index])
+        lgb_train = lgb.Dataset(train_feat.values, train_Y.loc[train_index])
+        lgb_cv = lgb.Dataset(cv_feat.values, train_Y.loc[cv_index])
         gbm = lgb.train(params=params,
                         train_set=lgb_train,
                         num_boost_round=6000,
@@ -149,8 +164,8 @@ def lgb_offline(train_data, cv_data):
         feat_imp = pd.Series(gbm.feature_importance(), index=train_data.columns).sort_values(ascending=False)
         print(gbm.best_iteration)
         print(gbm.best_score)
-        print('   训练损失:',cal_log_loss(predict_train, train_Y[train_index]))
-        print('   测试损失:',cal_log_loss(predict_cv, train_Y[cv_index]))
+        print('   训练损失:',cal_log_loss(predict_train, train_Y.loc[train_index]))
+        print('   测试损失:',cal_log_loss(predict_cv, train_Y.loc[cv_index]))
     predict_test = np.median(test_preds,axis=1)
     predict_test = predict_test/(predict_test+(1-predict_test)/rate)
     print(params)
@@ -165,7 +180,7 @@ if __name__ == '__main__':
     t0 = time.time()
     train_data = load_pickle(path=cache_pkl_path +'train_data')
     cv_data = load_pickle(path=cache_pkl_path +'cv_data')
-    test_data = load_pickle(path=cache_pkl_path +'test_data')
+    test_data = load_pickle(path=cache_pkl_path +'test_data')      
     
     cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level',\
             'item_brand_id','item_city_id','query_item_second_cate_sim','query_item_second_cate_sim',\

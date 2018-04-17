@@ -102,6 +102,7 @@ def data2libffm(merge_dat,output_name):
 def split_negative_data(data, n_splits=1):
     negative_data = data[data['is_trade']==0]
     data_length = len(negative_data.index)
+    random.seed(0)
     shuffled_index = random.sample(range(data_length), len(list(negative_data.index)))
     splitted_data = None
     batch_length = int(data_length*n_splits)

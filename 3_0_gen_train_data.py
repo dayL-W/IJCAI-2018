@@ -101,19 +101,27 @@ def gen_one_hot_data():
     data = pd.concat([train_data,cv_data, test_data],axis=0)
     
     #对非线性的cvr进行分段处理
-    cols_divide = {'user_id_cvr_smooth':0.05,'item_id_cvr_smooth':0.075,\
-                   'item_brand_id_cvr_smooth':0.075,'second_cate_cvr_smooth':0.045,\
-                   'shop_id_cvr_smooth':0.075,'max_cp_cvr':0.1,'min_cp_cvr':0.04,'mean_cp_cvr':0.05}
+#    cols_divide = {'user_id_cvr_smooth':0.05,'item_id_cvr_smooth':0.075,\
+#                   'item_brand_id_cvr_smooth':0.075,'second_cate_cvr_smooth':0.045,\
+#                   'shop_id_cvr_smooth':0.075,'max_cp_cvr':0.1,'min_cp_cvr':0.04,'mean_cp_cvr':0.05}
+#    
+#    for key, value in cols_divide.items():
+#        str_col = key+'_-1'
+#        data[str_col] = data[key] == -1
+#        str_col = key+'_sma'+str(value)
+#        data[str_col] = (data[key] != -1) & (data[key]<=value)
+#        str_col = key+'_gra'+str(value)
+#        data[str_col] = (data[key] != -1) & (data[key]>value)
+#        data.drop(key, axis=1, inplace=True)
     
-    for key, value in cols_divide.items():
-        str_col = key+'_-1'
-        data[str_col] = data[key] == -1
-        str_col = key+'_sma'+str(value)
-        data[str_col] = (data[key] != -1) & (data[key]<=value)
-        str_col = key+'_gra'+str(value)
-        data[str_col] = (data[key] != -1) & (data[key]>value)
-        data.drop(key, axis=1, inplace=True)
-    cols = ['second_cate','item_price_level'
+    cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level',\
+        'item_brand_id','item_city_id','query_item_second_cate_sim','query_item_second_cate_sim',\
+        'user_id_buy_count','item_id_buy_count','item_brand_id_buy_count','shop_id_buy_count',\
+        'user_id_cvr_smooth','item_id_cvr_smooth','item_brand_id_cvr_smooth','shop_id_cvr_smooth',\
+        'max_cp_cvr','min_cp_cvr','mean_cp_cvr']
+    for i in cols:
+        data[i].replace(to_replace=-1,value=0,inplace=True)
+    cols = ['second_cate','item_price_level','item_city_id'
             ,'context_page_id','shop_review_num_level']
     
     for col in cols:
