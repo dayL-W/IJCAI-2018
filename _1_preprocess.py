@@ -9,13 +9,14 @@ import pandas as pd
 import numpy as np
 import time
 import datetime
+from datetime import datetime
 import os
 from tqdm import tqdm
 from utils import raw_data_path,feature_data_path,result_path,cache_pkl_path,dump_pickle,load_pickle
 #from utils import read_init_data, addCate
 
 train_file = 'round1_ijcai_18_train_20180301.txt'
-test_file = 'round1_ijcai_18_test_a_20180301.txt'
+test_file = 'round1_ijcai_18_test_b_20180418.txt'
 
 # In[ ]:把训练数据和测试数据换成统一的Index
 
@@ -34,7 +35,7 @@ def gen_global_index():
 def gen_day_hour(file_name):
     data = load_pickle(path=raw_data_path + file_name + '.pkl')
     
-    data.context_timestamp = pd.to_datetime(data.context_timestamp, unit='s')
+    data.context_timestamp = data.context_timestamp.apply(datetime.fromtimestamp)
     data['day'] = data.context_timestamp.apply(lambda x:x.date().day)
     data['hour'] = data.context_timestamp.apply(lambda x:x.time().hour)
     

@@ -10,7 +10,7 @@ import numpy as np
 from utils import load_pickle, raw_data_path, feature_data_path, cache_pkl_path, result_path, model_path,submmit_result
 import subprocess
 from common import data2libffm
-
+from sklearn.preprocessing import minmax_scale
 
 categorical_field = ['user_gender_id', 'user_age_level', 'user_occupation_id',
                      'user_star_level', 'is_morning',  'is_evening', 'is_before_dawn','item_id',
@@ -105,7 +105,6 @@ if __name__ == '__main__':
     train_data = load_pickle(path=cache_pkl_path +'train_data')
     cv_data = load_pickle(path=cache_pkl_path +'cv_data')
     test_data = load_pickle(path=cache_pkl_path +'test_data')
-    test_data['is_trade'] = 0
     
     gen_ffm_data_offline(train_data, cv_data, test_data, 'offline')
     train_data = pd.concat([train_data, cv_data],axis=0)

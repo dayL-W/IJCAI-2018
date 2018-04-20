@@ -169,8 +169,9 @@ def gen_cvr_smooth(file_name='train'):
                 col_I = col+'_I'
                 col_C = col+'_C'
                 col_cvr_smooth = col+'_cvr_smooth'
-                print(day)
-                if day != 17:
+#                print(day)
+                col_cvr_series=pd.Series()
+                if day != data.day.min():
                     filter_data = data.loc[data.day < day, [col, 'is_trade']]
                     #计算转化率
                     I = filter_data.groupby(col)['is_trade'].size().reset_index()
@@ -271,6 +272,7 @@ def gen_count(file_name='train'):
             feat_all = pd.concat([feat_all,col_feat[col_I]], axis=1)
             cvr_path = feature_data_path + 'test_count'
             dump_pickle(feat_all, cvr_path)
+            
 # In[]
 if __name__ == '__main__':
     gen_cvr_smooth('train')

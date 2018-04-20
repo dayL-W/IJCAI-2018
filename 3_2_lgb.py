@@ -17,7 +17,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.cross_validation import KFold,train_test_split
 import lightgbm as lgb
 
-rate = 0.79
+rate = 1 
 #params = {
 #    'max_depth': 4,                 #4
 ##    'min_data_in_leaf': 40,-
@@ -71,6 +71,7 @@ params = {
     'lambda_l2':1.5,
     'lambda_l1':1.5
 }
+rate = 1
 def lgb_online(train_data, cv_data, test_data):
     
     train_data = pd.concat([train_data, cv_data],axis=0)
@@ -182,6 +183,7 @@ if __name__ == '__main__':
     cv_data = load_pickle(path=cache_pkl_path +'cv_data')
     test_data = load_pickle(path=cache_pkl_path +'test_data')
     
+#    train_data.drop(train_data.index[train_data.day==train_data.day.min()],inplace=True, axis=0)
     cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level',\
             'item_brand_id','item_city_id','query_item_second_cate_sim','query_item_second_cate_sim',\
             'user_id_buy_count','item_id_buy_count','item_brand_id_buy_count','shop_id_buy_count',\
@@ -191,8 +193,8 @@ if __name__ == '__main__':
         train_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
         cv_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
         test_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
-    gbm, feat_imp = lgb_online(train_data, cv_data,test_data)
-#    gbm, feat_imp = lgb_offline(train_data, cv_data)
+#    gbm, feat_imp = lgb_online(train_data, cv_data,test_data)
+    gbm, feat_imp = lgb_offline(train_data, cv_data)
     t1 = time.time()
     print('训练时间:',t1-t0)
     

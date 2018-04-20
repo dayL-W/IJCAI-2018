@@ -35,7 +35,7 @@ params={
     'eval_metric':'logloss',
     'max_depth':6,
     'colsample_bytree': 0.85,
-    'nthread':40,
+    'nthread':4,
     'gamma':0.6,
     'lambda':2,
     'eta':0.03,
@@ -46,7 +46,7 @@ params={
 
 n_round=500
 
-rate = 0.77
+rate = 1
 def xgb_offline(train_data, cv_data):
     
     train_data = build_train_dataset(train_data, rate)
@@ -54,7 +54,7 @@ def xgb_offline(train_data, cv_data):
     train_Y = train_data['is_trade'].values
     cv_Y = cv_data['is_trade'].values
     
-    drop_cols = ['is_trade','user_id_buy_count','is_before_dawn','day','second_cate']
+    drop_cols = ['is_trade']
     train_data.drop(drop_cols,axis=1,inplace=True)
     cv_data.drop(drop_cols,axis=1,inplace=True)
     print('train shap:',train_data.shape)
@@ -114,7 +114,7 @@ def xgb_online(train_data, cv_data, test_data):
     train_data.reset_index(inplace=True,drop=True)
     train_Y = train_data['is_trade'].values
     
-    drop_cols = ['is_trade','user_id_buy_count','is_before_dawn','day','second_cate']
+    drop_cols = ['is_trade']
     train_data.drop(drop_cols,axis=1,inplace=True)
     cv_data.drop(drop_cols,axis=1,inplace=True)
     test_data.drop(drop_cols,axis=1,inplace=True)
@@ -156,7 +156,7 @@ def xgb_online(train_data, cv_data, test_data):
     ceate_feature_map(features)
     importance = clf.get_fscore(fmap='xgb.fmap')
     importance = sorted(importance.items(), key=operator.itemgetter(1))
-    df = pd.DataFrame(importance, columns=['feature', 'fscore'])  
+    df = pd.DataFrame(importance, columns=['feature', 'fscore'])
     df['fscore'] = df['fscore'] / df['fscore'].sum()
     
     print('训练损失:',cal_log_loss(train_preds/4, train_Y))
@@ -173,6 +173,7 @@ if __name__ == '__main__':
     train_data = load_pickle(path=cache_pkl_path +'train_data')
     cv_data = load_pickle(path=cache_pkl_path +'cv_data')
     test_data = load_pickle(path=cache_pkl_path +'test_data')
+    
     
     cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level',\
             'item_brand_id','item_city_id','query_item_second_cate_sim','query_item_second_cate_sim',\

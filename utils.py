@@ -145,7 +145,7 @@ def cal_single_log_loss(predict_list, valid_list):
 
 # In[]:
 def submmit_result(test_y, name):
-    test_file = 'round1_ijcai_18_test_a_20180301.txt'
+    test_file = 'round1_ijcai_18_test_b_20180418.txt'
     test = pd.read_table(raw_data_path + test_file,delim_whitespace=True)
     test_id = test.instance_id
     

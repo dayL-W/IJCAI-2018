@@ -149,7 +149,7 @@ def gen_cate_property_cvr(test_day, data):
         print('found '+cate_prop_dict_path)   
         return load_pickle(cate_prop_dict_path)
     cate_prop_cvr = []
-    if test_day != 17:
+    if test_day != 18:
         real_data = data
         real_data = real_data[real_data['day']<test_day]
         trade_data = real_data[real_data['is_trade']==1]
@@ -210,7 +210,7 @@ def add_cate_property_cvr(file_name='train'):
     else:
         train_data = load_pickle(path=raw_data_path + 'train' + '.pkl')
         cate_prop_cvr = pd.DataFrame()
-        cate_prop_cvr_day = gen_cate_property_cvr(25, train_data)
+        cate_prop_cvr_day = gen_cate_property_cvr(data.day.min(), train_data)
         cate_prop_cvr_dict = dict(cate_prop_cvr_day)
         cate_prop_feat = data.loc[:, ['instance_id', 'item_category_list', 'item_property_list']]
         cate_prop_cvr[['max_cp_cvr','min_cp_cvr', 'mean_cp_cvr']] = cate_prop_feat.apply(lambda x: gen_cate_property_cvr_stats(x, cate_prop_cvr_dict), axis=1)

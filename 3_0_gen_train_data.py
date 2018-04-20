@@ -38,7 +38,7 @@ def gen_train_data(file_name='train', test_day=24):
     cvr_smooth = load_pickle(path=feature_data_path + file_name + '_cvr_smooth')
     cate_prop_cvr = load_pickle(path=feature_data_path + file_name + '_cate_prop_cvr')
     
-    view_count = load_pickle(path=feature_data_path + file_name + '_count')
+    
     data = pd.concat([user_basic_info,user_search_count,user_search_time,\
                       item_basic_info,item_relative_info,query_item_sim,shop_basic_info,\
                       buy_count,cvr_smooth,cate_prop_cvr],axis=1)
@@ -54,7 +54,7 @@ def gen_train_data(file_name='train', test_day=24):
     for col in cols:
         data[col] = data[col].replace(to_replace=-1,value=data[col].median())
     #7号都是缺失值，可以考虑删除
-    data.drop(data.index[data.day==17],inplace=True, axis=0)
+#    data.drop(data.index[data.day==17],inplace=True, axis=0)
     #把销量、价格、收藏次数以下特征取对数
     data['item_sales_level'].replace(to_replace=-1,value=0,inplace=True)
     cols = ['item_sales_level','item_collected_level','item_pv_level']
@@ -62,6 +62,9 @@ def gen_train_data(file_name='train', test_day=24):
         data[col] = np.log1p(data[col])
         
     if file_name == 'train':
+        data = data.drop_duplicates()
+        view_data = load_pickle(path=feature_data_path + file_name + '_visit')
+        data = pd.concat([data, view_data],axis=1)
         #划分训练数据和测试数据
 #        data_length = len(data.index)
 #        shuffled_index = random.sample(range(data_length), data_length)
@@ -88,6 +91,8 @@ def gen_train_data(file_name='train', test_day=24):
         dump_pickle(cv_data, cache_pkl_path +'cv_data')
         dump_pickle(test_Y, cache_pkl_path +'cv_Y')
     else:
+        view_data = load_pickle(path=feature_data_path + file_name + '_visit')
+        data = pd.concat([data, view_data],axis=1)
         data['is_trade'] = 0
         data.reset_index(inplace=True,drop=True)
         dump_pickle(data, cache_pkl_path +'test_data')
