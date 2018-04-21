@@ -12,9 +12,9 @@ from utils import load_pickle, raw_data_path, feature_data_path, cache_pkl_path,
 if __name__ == '__main__':
     
     
-    XGB = pd.read_csv('../result/XGB_20180418_223208.txt',sep=' ')
-    LGB = pd.read_csv('../result/LGB_20180418_224203.txt',sep=' ')
-    FFM = pd.read_csv('../result/FFM_20180418_225250.txt',sep=' ')
+    XGB = pd.read_csv('../result/XGB_20180421_211412.txt',sep=' ')
+    LGB = pd.read_csv('../result/LGB_20180421_172434.txt',sep=' ')
+    FFM = pd.read_csv('../result/FFM_20180421_215653.txt',sep=' ')
     
     result = np.zeros((len(XGB), 3))
     result[:,0] = XGB['predicted_score'].values

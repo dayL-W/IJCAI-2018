@@ -12,66 +12,28 @@ import os
 
 from utils import raw_data_path,feature_data_path,result_path,cache_pkl_path,dump_pickle,load_pickle,build_train_dataset,cal_log_loss,submmit_result
 from smooth import BayesianSmoothing
-import gen_smooth_features as smooth_features
 from sklearn.linear_model import LogisticRegression
 from sklearn.cross_validation import KFold,train_test_split
 import lightgbm as lgb
 
-rate = 1 
-#params = {
-#    'max_depth': 4,                 #4
-##    'min_data_in_leaf': 40,-
-#    'feature_fraction': 1,       #1
-#    'learning_rate': 0.04,          #0.04
-#    'boosting_type': 'gbdt',
-#    'objective': 'binary',
-##    'verbose': -1,
-#    'metric': 'binary_logloss',
-##    'lambda_l2':0.2
-#}
-
-#params = {
-#    'max_depth': 8,                 #4
-##    'min_data_in_leaf': 40,-
-#    'feature_fraction': 1,       #1
-#    'learning_rate': 0.02,          #0.04
-#    'boosting_type': 'gbdt',
-#    'objective': 'binary',
-##    'verbose': -1,
-#    'metric': 'binary_logloss',
-#    'lambda_l2':2
-#}
-
-#params = {
-#    'max_depth': 7,                 #4
-##    'min_data_in_leaf': 40,-
-#    'feature_fraction': 1,       #1
-#    'learning_rate': 0.04,          #0.04
-#    'boosting_type': 'gbdt',
-#    'objective': 'binary',
-##    'verbose': -1,
-#    'metric': 'binary_logloss',
-#    'lambda_l2':1.8,
-#    'lambda_l1':3.3
-#}
 
 params = {
-    'max_depth': 8,                 #4
+    'max_depth': 6,                 #4
 #    'min_data_in_leaf': 40,-
-    'feature_fraction': 0.55,       #1
-    'learning_rate': 0.04,          #0.04
+    'feature_fraction': 0.7,       #0.55
+    'learning_rate': 0.1,          #0.04
     'boosting_type': 'gbdt',
     'objective': 'binary',
 #    'verbose': -1,
     'metric': 'binary_logloss',
-#    'max_bin':180,
+#    'max_bin':240,
     'bagging_seed':3,
     'feature_fraction_seed':3,
-#    'num_leaves':200
-    'lambda_l2':1.5,
-    'lambda_l1':1.5
+#    'num_leaves':64
+#    'lambda_l2': 0.02
+#    'lambda_l1':0.05
 }
-rate = 1
+rate = 2
 def lgb_online(train_data, cv_data, test_data):
     
     train_data = pd.concat([train_data, cv_data],axis=0)
@@ -151,7 +113,7 @@ def lgb_offline(train_data, cv_data):
                         num_boost_round=6000,
                         valid_sets=lgb_cv,
                         verbose_eval=False,
-                        early_stopping_rounds=200)
+                        early_stopping_rounds=100)
         #评价特征的重要性
         feat_imp = pd.Series(gbm.feature_importance(), index=train_data.columns).sort_values(ascending=False)
         
@@ -184,15 +146,21 @@ if __name__ == '__main__':
     test_data = load_pickle(path=cache_pkl_path +'test_data')
     
 #    train_data.drop(train_data.index[train_data.day==train_data.day.min()],inplace=True, axis=0)
-    cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level',\
-            'item_brand_id','item_city_id','query_item_second_cate_sim','query_item_second_cate_sim',\
-            'user_id_buy_count','item_id_buy_count','item_brand_id_buy_count','shop_id_buy_count',\
-            'user_id_cvr_smooth','item_id_cvr_smooth','item_brand_id_cvr_smooth','shop_id_cvr_smooth',\
-            'max_cp_cvr','min_cp_cvr','mean_cp_cvr']
-    for i in cols:
-        train_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
-        cv_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
-        test_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
+#    cols = ['user_gender_id','user_age_level','user_occupation_id','user_star_level',\
+#            'item_brand_id','item_city_id','query_item_second_cate_sim','query_item_second_cate_sim',\
+#            'user_id_buy_count','item_id_buy_count','item_brand_id_buy_count','shop_id_buy_count',\
+#            'user_id_cvr_smooth','item_id_cvr_smooth','item_brand_id_cvr_smooth','shop_id_cvr_smooth',\
+#            'max_cp_cvr','min_cp_cvr','mean_cp_cvr']
+#    for i in cols:
+    train_data.replace(to_replace=-1,value=np.nan,inplace=True)
+    cv_data.replace(to_replace=-1,value=np.nan,inplace=True)
+    test_data.replace(to_replace=-1,value=np.nan,inplace=True)
+        
+    drop_cols = ['user_id_1day_cvr','item_id_visit#30M/1H', 'shop_id_visit#24H','item_id_visit#4H','user_id_visit#30M',\
+                 'user_id_buy_count','day','user_hour_shop_search','item_id_visit#30M','item_id']
+    train_data.drop(drop_cols, inplace=True, axis=1)
+    cv_data.drop(drop_cols, inplace=True, axis=1)
+    test_data.drop(drop_cols, inplace=True, axis=1)
 #    gbm, feat_imp = lgb_online(train_data, cv_data,test_data)
     gbm, feat_imp = lgb_offline(train_data, cv_data)
     t1 = time.time()

@@ -24,50 +24,150 @@ eta = 0.00001
 
 
 # In[]:生成用户在这天之前的CVR平滑特征
-def gen_user_cvr_smooth(test_day, file_name='train'):
-    
-    data = load_pickle(path=raw_data_path + file_name + '.pkl')
-    
-    user_cvr = data.loc[data.day<test_day,['user_id', 'is_trade']]
-    
-    #获得每个用户的购买数和点击数
-    I = user_cvr.groupby('user_id')['is_trade'].size().reset_index()
-    I.columns = ['user_id', 'user_I']
-    C = user_cvr.groupby('user_id')['is_trade'].sum().reset_index()
-    C.columns = ['user_id', 'user_C']
-    user_cvr = pd.concat([I, C['user_C']], axis=1)
-    #平滑滤波
-    hyper = BayesianSmoothing(1, 1)
-    hyper.update(user_cvr['user_I'].values, user_cvr['user_C'].values, iterations, eta)
-    alpha = hyper.alpha
-    beta = hyper.beta
-    user_cvr['user_cvr_smooth'] = (user_cvr['user_C'] + alpha) / (user_cvr['user_I'] + alpha + beta)
-    
-    #返回一个Dataframe
-    return [user_cvr,alpha,beta]
+def gen_user_cvr_smooth(file_name='train'):
+    '''
+    获取用户前1，2，3，4天之前的转化率
+    '''
+    cols = ['user_id','item_id','shop_id','second_cate',]
+    for col in cols:
+        id_name = col
+        id_I = col+'_I'
+        id_C = col+'_C'
+        
+        data = load_pickle(path=raw_data_path + file_name + '.pkl')
+        data = data[[id_name,'day','hour','is_trade']]
+        
+        user_cvr_all = pd.DataFrame()
+        cvr_days = [1,2,3,4]
+        days = list(set(data.day))
+        if file_name == 'train':
+            
+            for cvr_day in  cvr_days:
+                col_cvr = id_name + '_'+str(cvr_day) + 'day_cvr'
+                #统计前1、2、3、4天的转化率，天数不够的都为-1
+                data[col_cvr] = -1
+                data.loc[data.day<days[cvr_day],col_cvr] = -1
+                for now_day in days[cvr_day:]:
+                    #得到now_day~(now-day - cvr_day)的数据
+                    now_data = data.loc[(data.day<now_day)&(data.day>=(now_day-cvr_day)), :]
+                    I = now_data.groupby(id_name)['is_trade'].size().reset_index()
+                    I.columns = [id_name, id_I]
+                    C = now_data.groupby(id_name)['is_trade'].sum().reset_index()
+                    C.columns = [id_name, id_C]
+                    user_cvr = pd.concat([I, C[id_C]], axis=1)
+                    
+                    #平滑滤波
+                    hyper = BayesianSmoothing(1, 1)
+                    hyper.update(user_cvr[id_I].values, user_cvr[id_C].values, iterations, eta)
+                    alpha = hyper.alpha
+                    beta = hyper.beta
+                    user_cvr[col_cvr] = (user_cvr[id_C] + alpha) / (user_cvr[id_I] + alpha + beta)
+                    
+                    user_cvr = user_cvr[[id_name, col_cvr]].set_index(id_name)[col_cvr]
+                    
+                    #把今天之前的转化率加到今天的特征中
+                    filter_day = data.loc[data.day==now_day,id_name]
+                    data.loc[data.day==now_day,col_cvr] = filter_day.apply(lambda x: user_cvr[x] if x in user_cvr.index else -1)
+                #把这次cvr加到总数据中
+                user_cvr_all = pd.concat([user_cvr_all, data[col_cvr]],axis=1)
+                cvr_path = feature_data_path + file_name+ id_name + 'cvr_day'
+                dump_pickle(user_cvr_all, cvr_path)
+        else:
+            train_data = load_pickle(path=raw_data_path + 'train' + '.pkl')
+            train_data = train_data[[id_name,'day','hour','is_trade']]
+            for cvr_day in  cvr_days:
+                col_cvr = id_name + '_'+str(cvr_day) + 'day_cvr'
+                #统计前1、2、3、4天的转化率，天数不够的都为-1
+                data[col_cvr] = -1
+                now_day = days[0]
+                
+                #得到now_day~(now-day - cvr_day)的数据
+                now_data = train_data.loc[(train_data.day<now_day)&(train_data.day>=(now_day-cvr_day)), :]
+                I = now_data.groupby(id_name)['is_trade'].size().reset_index()
+                I.columns = [id_name, id_I]
+                C = now_data.groupby(id_name)['is_trade'].sum().reset_index()
+                C.columns = [id_name, id_C]
+                user_cvr = pd.concat([I, C[id_C]], axis=1)
+                
+                #平滑滤波
+                hyper = BayesianSmoothing(1, 1)
+                hyper.update(user_cvr[id_I].values, user_cvr[id_C].values, iterations, eta)
+                alpha = hyper.alpha
+                beta = hyper.beta
+                user_cvr[col_cvr] = (user_cvr[id_C] + alpha) / (user_cvr[id_I] + alpha + beta)
+                
+                user_cvr = user_cvr[[id_name, col_cvr]].set_index(id_name)[col_cvr]
+                filter_day = data.loc[data.day==now_day,id_name]
+                #把今天之前的转化率加到今天的特征中
+                data.loc[data.day==now_day,col_cvr] = filter_day.apply(lambda x: user_cvr[x] if x in user_cvr.index else -1)
+                #把这次cvr加到总数据中
+                user_cvr_all = pd.concat([user_cvr_all, data[col_cvr]],axis=1)
+                cvr_path = feature_data_path + file_name+ id_name + 'cvr_day'
+                dump_pickle(user_cvr_all, cvr_path)
 
 # In[]:获取商品CVR平滑滤波后的数据
 def gen_item_cvr_smooth(test_day, file_name='train'):
     '''
-    获取商品这天之前的搜索转化率平滑
+    获取商品前3个小时的转化率
+    以及历史数据下,0~7点，8到11点，12到13点，14到17点，18到19点，20点到23点的转化率
     '''
+    item_cvr_all = pd.DataFrame()
+    id_name = 'item_id'
+    id_I = id_name+'_I'
+    id_C = id_name+'_C'
+    
     data = load_pickle(path=raw_data_path + file_name + '.pkl')
-    item_cvr = data.loc[data.day<test_day,['item_id', 'is_trade']]
+    data = data[[id_name,'day','hour','is_trade']]
+    data['day_hour'] = (data['day']-data.day.min()) * 24 + data['hour']
     
-    #获得每个商品的购买数和点击数
-    I = item_cvr.groupby('item_id')['is_trade'].size().reset_index()
-    I.columns = ['item_id', 'item_I']
-    C = item_cvr.groupby('item_id')['is_trade'].sum().reset_index()
-    C.columns = ['item_id', 'item_C']
-    item_cvr = pd.concat([I, C['item_C']], axis=1)
-    #平滑滤波
-    hyper = BayesianSmoothing(1, 1)
-    hyper.update(item_cvr['item_I'].values, item_cvr['item_C'].values, 100, 0.00001)
-    alpha = hyper.alpha
-    beta = hyper.beta
-    item_cvr['item_cvr_smooth'] = (item_cvr['item_C'] + alpha) / (item_cvr['item_I'] + alpha + beta)
-    
-    return [item_cvr,alpha,beta]
+    hours = [[0,7],[8,11],[12,13],[14,17],[18,19],[20,23]]
+    col_cvr = id_name + '_hour_cvr'
+    data[col_cvr] = -1
+    if file_name == 'train':
+        for hour in hours:
+            now_data = data.loc[(data.hour<=hour[1])&(data.hour>=(hour[0])), :]
+            I = now_data.groupby(id_name)['is_trade'].size().reset_index()
+            I.columns = [id_name, id_I]
+            C = now_data.groupby(id_name)['is_trade'].sum().reset_index()
+            C.columns = [id_name, id_C]
+            item_cvr = pd.concat([I, C[id_C]], axis=1)
+            #平滑滤波
+            hyper = BayesianSmoothing(1, 1)
+            hyper.update(item_cvr[id_I].values, item_cvr[id_C].values, iterations, eta)
+            alpha = hyper.alpha
+            beta = hyper.beta
+            
+            item_cvr[col_cvr] = (item_cvr[id_C] + alpha) / (item_cvr[id_I] + alpha + beta)
+            item_cvr = item_cvr[[id_name, col_cvr]].set_index(id_name)[col_cvr]
+            filter_day = data.loc[(data.hour<=hour[1])&(data.hour>=(hour[0])), id_name]
+            data.loc[(data.hour<=hour[1])&(data.hour>=(hour[0])),col_cvr] = filter_day.apply(lambda x: item_cvr[x] if x in item_cvr.index else -1)
+        item_cvr_all = pd.concat([item_cvr_all, data[col_cvr]],axis=1)
+        cvr_path = feature_data_path + file_name+ id_name + 'cvr_hour'
+        dump_pickle(item_cvr_all, cvr_path)
+    else:
+        train_data = load_pickle(path=raw_data_path + 'train' + '.pkl')
+        train_data = train_data[[id_name,'day','hour','is_trade']]
+        for hour in hours:
+            now_data = train_data.loc[(train_data.hour<=hour[1])&(train_data.hour>=(hour[0])), :]
+            I = now_data.groupby(id_name)['is_trade'].size().reset_index()
+            I.columns = [id_name, id_I]
+            C = now_data.groupby(id_name)['is_trade'].sum().reset_index()
+            C.columns = [id_name, id_C]
+            item_cvr = pd.concat([I, C[id_C]], axis=1)
+            #平滑滤波
+            hyper = BayesianSmoothing(1, 1)
+            hyper.update(item_cvr[id_I].values, item_cvr[id_C].values, iterations, eta)
+            alpha = hyper.alpha
+            beta = hyper.beta
+            
+            item_cvr[col_cvr] = (item_cvr[id_C] + alpha) / (item_cvr[id_I] + alpha + beta)
+            item_cvr = item_cvr[[id_name, col_cvr]].set_index(id_name)[col_cvr]
+            filter_day = data.loc[(data.hour<=hour[1])&(data.hour>=(hour[0])), id_name]
+            data.loc[(data.hour<=hour[1])&(data.hour>=(hour[0])),col_cvr] = filter_day.apply(lambda x: item_cvr[x] if x in item_cvr.index else -1)
+        item_cvr_all = pd.concat([item_cvr_all, data[col_cvr]],axis=1)
+        cvr_path = feature_data_path + file_name+ id_name + 'cvr_hour'
+        dump_pickle(item_cvr_all, cvr_path)
+
 
 def gen_brand_cvr_smooth(test_day, file_name='train'):
     '''
@@ -277,6 +377,4 @@ def gen_count(file_name='train'):
 if __name__ == '__main__':
     gen_cvr_smooth('train')
     gen_cvr_smooth('test')
-    gen_count('train')
-    gen_count('test')
 

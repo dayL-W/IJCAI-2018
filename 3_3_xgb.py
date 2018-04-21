@@ -36,11 +36,11 @@ params={
     'max_depth':6,
     'colsample_bytree': 0.85,
     'nthread':4,
-    'gamma':0.6,
-    'lambda':2,
-    'eta':0.03,
+#    'gamma':0.6,
+    'lambda':1,
+    'eta':0.4,
 #    'silent':0,
-    'alpha':1,
+#    'alpha':0.01,
 #    'subsample':1,
 }
 
@@ -78,7 +78,7 @@ def xgb_offline(train_data, cv_data):
 
         
         clf = xgb.train(params=params, dtrain=train_feat,num_boost_round=n_round,\
-            evals=watchlist,early_stopping_rounds=30,verbose_eval=False)
+            evals=watchlist,early_stopping_rounds=7,verbose_eval=False)
     
         predict_train = clf.predict(train_feat)
         predict_cv = clf.predict(cv_feat)
@@ -184,7 +184,15 @@ if __name__ == '__main__':
         train_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
         cv_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
         test_data[i].replace(to_replace=-1,value=np.nan,inplace=True)
-    
+        
+    drop_cols = ['is_before_dawn','user_id_3day_cvr','user_id_visit#30M','is_afternoon','user_hour_shop_search',\
+                 'user_id_2day_cvr','user_id_visit#1H', 'user_id_visit#4H/12H']
+    train_data.drop(drop_cols, inplace=True, axis=1)
+    cv_data.drop(drop_cols, inplace=True, axis=1)
+    test_data.drop(drop_cols, inplace=True, axis=1)
+#    train_data.replace(to_replace=-1,value=np.nan,inplace=True)
+#    cv_data.replace(to_replace=-1,value=np.nan,inplace=True)
+#    test_data.replace(to_replace=-1,value=np.nan,inplace=True)
     feat_imp, clf = xgb_online(train_data, cv_data, test_data)
 #    feat_imp, clf = xgb_offline(train_data, cv_data)
     

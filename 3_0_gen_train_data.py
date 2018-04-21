@@ -13,7 +13,6 @@ import os
 import random
 from utils import raw_data_path,feature_data_path,result_path,cache_pkl_path,dump_pickle,load_pickle,build_train_dataset,cal_log_loss
 from smooth import BayesianSmoothing
-import gen_smooth_features as smooth_features
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import minmax_scale
 from autoencoder import autoencoder,autoencoder_add_classify
@@ -38,8 +37,13 @@ def gen_train_data(file_name='train', test_day=24):
     cvr_smooth = load_pickle(path=feature_data_path + file_name + '_cvr_smooth')
     cate_prop_cvr = load_pickle(path=feature_data_path + file_name + '_cate_prop_cvr')
     
-    
-    data = pd.concat([user_basic_info,user_search_count,user_search_time,\
+    cols = ['user_id','item_id','shop_id','second_cate',]
+    for col in  cols:
+        cvr_a = load_pickle(path=feature_data_path + file_name + col + 'cvr_day')
+        data = pd.concat([data, cvr_a],axis=1)
+#    item_cvr_hour = load_pickle(path=feature_data_path + file_name + 'item_id' + 'cvr_hour')
+#    data = pd.concat([data, item_cvr_hour],axis=1)
+    data = pd.concat([data, user_basic_info,user_search_count,user_search_time,\
                       item_basic_info,item_relative_info,query_item_sim,shop_basic_info,\
                       buy_count,cvr_smooth,cate_prop_cvr],axis=1)
     
