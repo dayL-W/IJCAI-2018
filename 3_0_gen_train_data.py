@@ -41,8 +41,7 @@ def gen_train_data(file_name='train', test_day=24):
     for col in  cols:
         cvr_a = load_pickle(path=feature_data_path + file_name + col + 'cvr_day')
         data = pd.concat([data, cvr_a],axis=1)
-#    item_cvr_hour = load_pickle(path=feature_data_path + file_name + 'item_id' + 'cvr_hour')
-#    data = pd.concat([data, item_cvr_hour],axis=1)
+    
     data = pd.concat([data, user_basic_info,user_search_count,user_search_time,\
                       item_basic_info,item_relative_info,query_item_sim,shop_basic_info,\
                       buy_count,cvr_smooth,cate_prop_cvr],axis=1)

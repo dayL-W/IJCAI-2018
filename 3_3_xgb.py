@@ -49,7 +49,7 @@ n_round=500
 rate = 1
 def xgb_offline(train_data, cv_data):
     
-    train_data = build_train_dataset(train_data, rate)
+    train_data = build_train_dataset(train_data, rate)       
     train_data.reset_index(inplace=True,drop=True)
     train_Y = train_data['is_trade'].values
     cv_Y = cv_data['is_trade'].values
@@ -97,7 +97,7 @@ def xgb_offline(train_data, cv_data):
     ceate_feature_map(features)
     importance = clf.get_fscore(fmap='xgb.fmap')
     importance = sorted(importance.items(), key=operator.itemgetter(1))
-    df = pd.DataFrame(importance, columns=['feature', 'fscore'])  
+    df = pd.DataFrame(importance, columns=['feature', 'fscore'])
     df['fscore'] = df['fscore'] / df['fscore'].sum()
     
     predict_test = np.median(test_preds,axis=1)
@@ -193,8 +193,8 @@ if __name__ == '__main__':
 #    train_data.replace(to_replace=-1,value=np.nan,inplace=True)
 #    cv_data.replace(to_replace=-1,value=np.nan,inplace=True)
 #    test_data.replace(to_replace=-1,value=np.nan,inplace=True)
-    feat_imp, clf = xgb_online(train_data, cv_data, test_data)
-#    feat_imp, clf = xgb_offline(train_data, cv_data)
+#    feat_imp, clf = xgb_online(train_data, cv_data, test_data)
+    feat_imp, clf = xgb_offline(train_data, cv_data)
     
     t1 = time.time()
     print('训练用时:',t1-t0)

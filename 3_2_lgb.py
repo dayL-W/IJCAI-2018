@@ -33,7 +33,7 @@ params = {
 #    'lambda_l2': 0.02
 #    'lambda_l1':0.05
 }
-rate = 2
+rate = 1
 def lgb_online(train_data, cv_data, test_data):
     
     train_data = pd.concat([train_data, cv_data],axis=0)
@@ -157,7 +157,7 @@ if __name__ == '__main__':
     test_data.replace(to_replace=-1,value=np.nan,inplace=True)
         
     drop_cols = ['user_id_1day_cvr','item_id_visit#30M/1H', 'shop_id_visit#24H','item_id_visit#4H','user_id_visit#30M',\
-                 'user_id_buy_count','day','user_hour_shop_search','item_id_visit#30M','item_id']
+                 'user_id_buy_count','day','user_hour_shop_search','item_id_visit#30M','item_id','user_id_cvr_smooth', 'shop_id_cvr_smooth','item_id_cvr_smooth','item_brand_id_cvr_smooth']
     train_data.drop(drop_cols, inplace=True, axis=1)
     cv_data.drop(drop_cols, inplace=True, axis=1)
     test_data.drop(drop_cols, inplace=True, axis=1)
